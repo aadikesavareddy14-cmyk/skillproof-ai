@@ -1,0 +1,2 @@
+[functions.validate-github-username]
+verify_jwt = false
