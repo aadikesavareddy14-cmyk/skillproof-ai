@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { ShieldCheck, Github, FileText, ArrowRight, CheckCircle2, Loader2, AlertCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 const ACCEPTED_TYPES = ['.pdf', '.doc', '.docx'];
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -96,11 +97,8 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   return (
     <div className="min-h-screen bg-[#0a0a0b] flex flex-col">
       <header className="border-b border-zinc-800/50 glass">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8 h-16 flex items-center gap-2">
-          <ShieldCheck className="w-7 h-7 text-blue-500" strokeWidth={2.2} />
-          <span className="text-lg font-semibold tracking-tight">
-            SkillProof<span className="text-blue-500"> AI</span>
-          </span>
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 h-16 flex items-center">
+          <SkillProofLogo variant="lockup" size="navbar" />
         </div>
       </header>
 

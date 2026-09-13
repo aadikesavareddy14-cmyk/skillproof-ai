@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, AlertCircle, User } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 interface AuthModalProps {
   open: boolean;
@@ -168,11 +169,8 @@ export function AuthModal({ open, onClose, initialMode = 'signup', onSuccess }: 
         </button>
 
         <div className="p-8">
-          <div className="flex items-center gap-2 mb-6">
-            <ShieldCheck className="w-7 h-7 text-blue-500" strokeWidth={2.2} />
-            <span className="text-lg font-semibold tracking-tight">
-              SkillProof<span className="text-blue-500"> AI</span>
-            </span>
+          <div className="flex flex-col items-center justify-center mb-6">
+            <SkillProofLogo variant="full" size="auth" />
           </div>
 
           {/* Tab switcher */}
