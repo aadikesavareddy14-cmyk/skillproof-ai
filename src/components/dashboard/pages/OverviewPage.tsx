@@ -2,11 +2,12 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   ShieldCheck,
   Briefcase,
-  FileCheck,
   TrendingUp,
   ArrowUpRight,
-  Activity,
-  Lock,
+  Sparkles,
+  Lightbulb,
+  FileText,
+  Layers,
 } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
@@ -15,7 +16,6 @@ import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { LockedState } from '@/components/dashboard/LockedState';
 import { useAuth } from '@/context/AuthContext';
 import { computeScores } from '@/lib/scoringService';
-import { recentActivity } from '@/lib/mockData';
 import type { DashboardPage } from '@/components/dashboard/Sidebar';
 
 interface OverviewPageProps {
@@ -27,10 +27,14 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [loading, setLoading] = useState(true);
 
   const ctx = useMemo(
-    () => ({ resumeUploaded: profile.resumeUploaded, githubConnected: profile.githubConnected }),
-    [profile.resumeUploaded, profile.githubConnected],
+    () => ({
+      resumeUploaded: profile.resumeUploaded,
+      previousScore: profile.resumePreviousScore,
+      fileName: profile.resumeFileName ?? undefined,
+    }),
+    [profile.resumeUploaded, profile.resumePreviousScore, profile.resumeFileName],
   );
-  const bothConnected = ctx.resumeUploaded && ctx.githubConnected;
+
   const scoringResult = useMemo(() => computeScores(ctx), [ctx]);
 
   useEffect(() => {
@@ -48,28 +52,58 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     );
   }
 
-  if (!bothConnected) {
+  if (!profile.resumeUploaded) {
     return (
       <div className="animate-fade-slide">
         <LockedState
-          resumeUploaded={ctx.resumeUploaded}
-          githubConnected={ctx.githubConnected}
-
-          title="Your profile is locked"
-          message="Upload your resume and connect GitHub to unlock your verified skill score, job matches, and learning roadmap."
+          resumeUploaded={false}
+          title="Your skill profile is locked"
+          message="Upload your resume to unlock your verified skill score, job matches, and learning roadmap."
         />
       </div>
     );
   }
 
-  const stats = scoringResult.ready
-    ? [
-        { key: 'skills', label: 'Skills Verified', icon: ShieldCheck, value: scoringResult.skills.length, trend: 'Verified score', color: 'text-blue-500' },
-        { key: 'jobs', label: 'Job Matches', icon: Briefcase, value: scoringResult.jobMatches.length, trend: 'Based on real scores', color: 'text-teal-500' },
-        { key: 'confidence', label: 'Avg Confidence', icon: TrendingUp, value: `${scoringResult.overallConfidence}%`, trend: 'Cross-referenced', color: 'text-amber-500' },
-        { key: 'roadmap', label: 'Roadmap Steps', icon: FileCheck, value: scoringResult.roadmapSteps.length, trend: 'Personalized', color: 'text-violet-400' },
-      ]
-    : [];
+  const qualitativeVariant: Record<'Needs Work' | 'Good' | 'Strong', 'error' | 'warning' | 'success'> = {
+    'Needs Work': 'error',
+    Good: 'warning',
+    Strong: 'success',
+  };
+
+  const stats = [
+    {
+      key: 'score',
+      label: 'Resume Score',
+      icon: Sparkles,
+      value: `${scoringResult.overallScore}/100`,
+      trend: scoringResult.qualitativeLabel,
+      color: 'text-blue-400',
+    },
+    {
+      key: 'skills',
+      label: 'Extracted Skills',
+      icon: ShieldCheck,
+      value: scoringResult.skills.length,
+      trend: 'Evidence verified',
+      color: 'text-teal-400',
+    },
+    {
+      key: 'jobs',
+      label: 'Job Matches',
+      icon: Briefcase,
+      value: scoringResult.jobMatches.length,
+      trend: 'Matched on skills',
+      color: 'text-amber-400',
+    },
+    {
+      key: 'suggestions',
+      label: 'Improvement Tips',
+      icon: Lightbulb,
+      value: scoringResult.suggestions.length,
+      trend: 'Actionable steps',
+      color: 'text-violet-400',
+    },
+  ];
 
   return (
     <div className="space-y-8 animate-fade-slide">
@@ -94,64 +128,183 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         ))}
       </div>
 
-      {/* Confidence ring + top skills */}
+      {/* Prominent Score Ring + Factor Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <Card hover={false} gradient className="p-8 flex flex-col items-center justify-center">
-          <h3 className="text-sm font-medium text-zinc-400 mb-6">Overall Confidence</h3>
+        {/* Overall Resume Score ring */}
+        <Card hover={false} gradient className="p-8 flex flex-col items-center justify-center text-center">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-4 h-4 text-blue-400" />
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              Overall Resume Score
+            </h3>
+          </div>
+
           <ProgressRing
-            value={scoringResult.overallConfidence}
+            value={scoringResult.overallScore}
             size={160}
             strokeWidth={10}
-            label={`${scoringResult.overallConfidence}%`}
-            sublabel="Verified"
+            label={`${scoringResult.overallScore}`}
+            sublabel="/ 100"
           />
-          <p className="text-xs text-zinc-500 mt-6 text-center max-w-xs">
-            Grounded in GitHub activity, resume evidence, and external skill benchmarks
+
+          <div className="mt-5 flex items-center gap-2 flex-wrap justify-center">
+            <Badge variant={qualitativeVariant[scoringResult.qualitativeLabel]} size="md">
+              {scoringResult.qualitativeLabel}
+            </Badge>
+
+            {scoringResult.scoreDelta !== null && scoringResult.scoreDelta !== undefined && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  scoringResult.scoreDelta > 0
+                    ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20'
+                    : 'bg-zinc-800 text-zinc-400'
+                }`}
+              >
+                <TrendingUp className="w-3 h-3" />
+                {scoringResult.scoreDelta > 0 ? `+${scoringResult.scoreDelta}` : scoringResult.scoreDelta} pts since last upload
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-zinc-500 mt-4 max-w-xs leading-relaxed">
+            Evaluated on statement clarity, quantifiable metrics, keywords, structure, and completeness.
           </p>
         </Card>
 
+        {/* 5 Factors Breakdown */}
         <Card hover={false} className="p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-semibold text-zinc-200">Top Verified Skills</h3>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-blue-500" />
+              <h3 className="text-base font-semibold text-zinc-200">Scoring Factors Breakdown</h3>
+            </div>
             <button
               onClick={() => onNavigate('profile')}
               className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
             >
-              View all <ArrowUpRight className="w-3 h-3" />
+              Full analysis <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="space-y-5">
-            {scoringResult.skills.slice(0, 5).map((skill, i) => (
-              <div key={skill.name}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-zinc-200">{skill.name}</span>
-                    <Badge variant="neutral" size="sm">{skill.level}</Badge>
+
+          <div className="space-y-3.5">
+            {scoringResult.factors.map((factor) => {
+              const pct = Math.round((factor.score / factor.maxScore) * 100);
+              return (
+                <div key={factor.key} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-zinc-300">{factor.name}</span>
+                    <span className="tabular-nums font-semibold text-zinc-200">
+                      {factor.score}/{factor.maxScore} pts
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums text-zinc-300">
-                    {skill.confidence}%
-                  </span>
+                  <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        pct >= 85
+                          ? 'bg-gradient-to-r from-blue-500 to-teal-400'
+                          : pct >= 65
+                          ? 'bg-gradient-to-r from-blue-500 to-amber-400'
+                          : 'bg-gradient-to-r from-amber-500 to-red-500'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-zinc-500 leading-tight">{factor.description}</p>
                 </div>
-                <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400 bar-fill"
-                    style={{ width: '0%', animation: `bar-grow 1s ease ${i * 0.15}s forwards` }}
-                    ref={(el) => {
-                      if (el) setTimeout(() => { el.style.width = `${skill.confidence}%`; }, 100);
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </div>
 
-      {/* Job matches preview + recent activity */}
+      {/* Top Skills Breakdown */}
+      <Card hover={false} className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-teal-500" />
+            <h3 className="text-base font-semibold text-zinc-200">Top Verified Skills</h3>
+          </div>
+          <button
+            onClick={() => onNavigate('profile')}
+            className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
+          >
+            View all skills <ArrowUpRight className="w-3 h-3" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {scoringResult.skills.slice(0, 6).map((skill, i) => (
+            <div
+              key={skill.name}
+              className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-zinc-200">{skill.name}</span>
+                  <Badge variant="neutral" size="sm">
+                    {skill.level}
+                  </Badge>
+                </div>
+                <span className="text-sm font-bold tabular-nums text-zinc-200">
+                  {skill.confidence}%
+                </span>
+              </div>
+
+              <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400 bar-fill"
+                  style={{ width: `${skill.confidence}%`, animation: `bar-grow 0.8s ease ${i * 0.1}s forwards` }}
+                />
+              </div>
+
+              <p className="text-xs text-zinc-400 leading-snug">{skill.supportLabel}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Improvement Suggestions + Job Matches Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Actionable Improvement Suggestions */}
         <Card hover={false} className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-semibold text-zinc-200">Top Job Matches</h3>
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base font-semibold text-zinc-200">Improvement Suggestions</h3>
+            </div>
+            <button
+              onClick={() => onNavigate('profile')}
+              className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
+            >
+              View details <ArrowUpRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {scoringResult.suggestions.slice(0, 3).map((sug) => (
+              <div
+                key={sug.id}
+                className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-900/30 space-y-1.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-200">{sug.title}</span>
+                  <Badge variant="warning" size="sm">
+                    {sug.impact}
+                  </Badge>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">{sug.suggestion}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Top Job Matches */}
+        <Card hover={false} className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-teal-400" />
+              <h3 className="text-base font-semibold text-zinc-200">Top Job Matches</h3>
+            </div>
             <button
               onClick={() => onNavigate('jobs')}
               className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
@@ -159,11 +312,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               View all <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
+
           <div className="space-y-3">
             {scoringResult.jobMatches.slice(0, 3).map((job) => (
               <div
                 key={job.id}
-                className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 transition-colors"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 transition-colors"
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -180,23 +334,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 <div className="text-right">
                   <div className="text-lg font-bold tabular-nums text-white">{job.fitScore}%</div>
                   <div className="text-xs text-zinc-500">fit</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card hover={false} className="p-6">
-          <h3 className="text-base font-semibold text-zinc-200 mb-6">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivity.map((activity, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800/50 border border-zinc-700/30 flex items-center justify-center shrink-0">
-                  <Activity className="w-4 h-4 text-zinc-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-300 leading-snug">{activity.action}</p>
-                  <p className="text-xs text-zinc-600 mt-0.5">{activity.time}</p>
                 </div>
               </div>
             ))}

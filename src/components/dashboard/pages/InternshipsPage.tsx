@@ -128,8 +128,6 @@ export function InternshipsPage({ onNavigate }: InternshipsPageProps) {
   const [locationFilter, setLocationFilter] = useState<LocationFilter>('all');
   const [sortBy, setSortBy] = useState<SortBy>('best');
 
-  const bothConnected = profile.resumeUploaded && profile.githubConnected;
-
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(timer);
@@ -145,14 +143,12 @@ export function InternshipsPage({ onNavigate }: InternshipsPageProps) {
     );
   }
 
-  if (!bothConnected) {
+  if (!profile.resumeUploaded) {
     return (
       <LockedState
-        resumeUploaded={profile.resumeUploaded}
-        githubConnected={profile.githubConnected}
-
+        resumeUploaded={false}
         title="Internship matches are locked"
-        message="Upload your resume and connect GitHub so we can match you to internships using your verified skill scores."
+        message="Upload your resume so we can match you to internships using your verified skill scores."
       />
     );
   }
@@ -224,7 +220,7 @@ export function InternshipsPage({ onNavigate }: InternshipsPageProps) {
           <EmptyState
             icon={GraduationCap}
             title="No internships match your filters"
-            message="Try adjusting your filters or connect more skill sources to improve your matches."
+            message="Try adjusting your filters or upload an updated resume to improve your matches."
             actionLabel="Reset filters"
             onAction={() => { setMatchFilter('all'); setLocationFilter('all'); }}
           />

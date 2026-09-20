@@ -4,14 +4,14 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 const steps = [
   {
     icon: Link,
-    title: 'Connect your sources',
-    description: 'Link your resume, GitHub, and project portfolio. SkillProof AI pulls evidence from every source automatically.',
+    title: 'Upload your resume',
+    description: 'Upload your resume in seconds. SkillProof AI analyzes your skills, metrics, and project outcomes automatically.',
     step: '01',
   },
   {
     icon: GitBranch,
-    title: 'AI builds your verified profile',
-    description: 'Our engine cross-references claims against real code, commits, and project outcomes — then runs adaptive assessments.',
+    title: 'AI scores & verifies skills',
+    description: 'Our engine evaluates your experience bullets, projects, and achievements — then runs adaptive assessments.',
     step: '02',
   },
   {

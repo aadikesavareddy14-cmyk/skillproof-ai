@@ -35,10 +35,10 @@ CREATE TABLE IF NOT EXISTS profile_state (
   resume_file_name text,
   resume_file_size bigint,
   resume_storage_path text,
-  github_connected boolean NOT NULL DEFAULT false,
-  github_username text,
-  github_email text,
-  github_connection_method text,
+  resume_score integer DEFAULT 0,
+  resume_score_previous integer,
+  resume_score_factors jsonb,
+  resume_analyzed_at timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

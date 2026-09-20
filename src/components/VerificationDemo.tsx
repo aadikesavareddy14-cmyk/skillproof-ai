@@ -1,4 +1,4 @@
-import { FileText, CheckCircle2, XCircle, Github, Brain, BarChart3 } from 'lucide-react';
+import { FileText, CheckCircle2, XCircle, Brain, BarChart3, FolderOpen } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 export function VerificationDemo() {
@@ -79,7 +79,7 @@ export function VerificationDemo() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-zinc-400">
                   <span className="flex items-center gap-1.5">
-                    <Github className="w-3.5 h-3.5" /> 12 repos
+                    <FolderOpen className="w-3.5 h-3.5 text-teal-400" /> 2 projects
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Brain className="w-3.5 h-3.5" /> Advanced
@@ -97,7 +97,7 @@ export function VerificationDemo() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-zinc-400">
                   <span className="flex items-center gap-1.5">
-                    <Github className="w-3.5 h-3.5" /> 8 repos
+                    <FolderOpen className="w-3.5 h-3.5 text-teal-400" /> 4 projects
                   </span>
                   <span className="flex items-center gap-1.5">
                     <BarChart3 className="w-3.5 h-3.5" /> Expert
@@ -115,7 +115,7 @@ export function VerificationDemo() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-zinc-400">
                   <span className="flex items-center gap-1.5">
-                    <Github className="w-3.5 h-3.5" /> 3 repos
+                    <FolderOpen className="w-3.5 h-3.5 text-teal-400" /> 2 systems
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Brain className="w-3.5 h-3.5" /> Intermediate
@@ -129,7 +129,7 @@ export function VerificationDemo() {
 
             <div className="mt-6 flex items-center gap-2 text-sm text-teal-400">
               <CheckCircle2 className="w-4 h-4" />
-              Verified through code, projects, and adaptive assessments.
+              Verified through resume analysis, projects, and adaptive assessments.
             </div>
           </div>
         </div>

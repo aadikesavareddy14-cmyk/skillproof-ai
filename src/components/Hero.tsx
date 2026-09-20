@@ -28,7 +28,7 @@ export function Hero({ onGetStarted, onSeeHowItWorks }: HeroProps) {
         </h1>
 
         <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          SkillProof AI analyzes resumes, GitHub, projects, and adaptive assessments
+          SkillProof AI analyzes resumes, project portfolios, and adaptive assessments
           to produce a verified skill profile — so you can prove what you know and
           match with jobs that fit.
         </p>

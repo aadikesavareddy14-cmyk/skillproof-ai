@@ -1,47 +1,27 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, FileText, Github, Loader2, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, FileText, Lock } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { ResumeUploadModal } from '@/components/dashboard/ResumeUploadModal';
-import { GitHubConnectModal } from '@/components/dashboard/GitHubConnectModal';
 import { useAuth } from '@/context/AuthContext';
 import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 interface LockedStateProps {
   resumeUploaded: boolean;
-  githubConnected: boolean;
   title?: string;
   message?: string;
 }
 
 export function LockedState({
   resumeUploaded,
-  githubConnected,
-  title = 'Your skill score is locked',
-  message = 'Upload your resume and connect GitHub to unlock your verified skill score.',
+  title = 'Your skill profile is locked',
+  message = 'Upload your resume to unlock your verified skill score, job matches, and learning roadmap.',
 }: LockedStateProps) {
-  const { uploadResume, connectGithub, githubEmailMismatch, dismissGithubMismatch, profile } = useAuth();
+  const { uploadResume } = useAuth();
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
-  const [githubModalOpen, setGithubModalOpen] = useState(false);
-
-  const bothDone = resumeUploaded && githubConnected;
 
   const handleResumeConfirm = (file: File) => {
     uploadResume(file.name, file.size);
     setResumeModalOpen(false);
-  };
-
-  const handleGithubOAuth = () => {
-    connectGithub('oauth-user').then(({ error }) => {
-      if (!error) setGithubModalOpen(false);
-    });
-  };
-
-  const handleGithubManual = async (username: string) => {
-    return connectGithub(username);
-  };
-
-  const handleConfirmMismatch = async (username: string) => {
-    return connectGithub(username, true);
   };
 
   return (
@@ -54,11 +34,11 @@ export function LockedState({
         <p className="text-sm text-zinc-400 mb-8 max-w-sm mx-auto">{message}</p>
 
         <div className="space-y-3 mb-8 max-w-xs mx-auto text-left">
-          {/* Resume row */}
+          {/* Single checklist item: Resume uploaded */}
           <button
             onClick={() => !resumeUploaded && setResumeModalOpen(true)}
             disabled={resumeUploaded}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
+            className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-colors text-left ${
               resumeUploaded
                 ? 'border-teal-500/20 bg-teal-500/5 cursor-default'
                 : 'border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50 cursor-pointer'
@@ -71,43 +51,16 @@ export function LockedState({
             )}
             <div className="flex items-center gap-2 flex-1">
               <FileText className={`w-4 h-4 ${resumeUploaded ? 'text-teal-400' : 'text-zinc-500'}`} />
-              <span className={`text-sm ${resumeUploaded ? 'text-teal-300' : 'text-zinc-300'}`}>
+              <span className={`text-sm ${resumeUploaded ? 'text-teal-300 font-medium' : 'text-zinc-300 font-medium'}`}>
                 {resumeUploaded ? 'Resume uploaded' : 'Upload your resume'}
-              </span>
-            </div>
-          </button>
-
-          {/* GitHub row */}
-          <button
-            onClick={() => !githubConnected && setGithubModalOpen(true)}
-            disabled={githubConnected}
-            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
-              githubConnected
-                ? 'border-teal-500/20 bg-teal-500/5 cursor-default'
-                : 'border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50 cursor-pointer'
-            }`}
-          >
-            {githubConnected ? (
-              <CheckCircle2 className="w-5 h-5 text-teal-500 shrink-0" />
-            ) : (
-              <Circle className="w-5 h-5 text-zinc-600 shrink-0" />
-            )}
-            <div className="flex items-center gap-2 flex-1">
-              <Github className={`w-4 h-4 ${githubConnected ? 'text-teal-400' : 'text-zinc-500'}`} />
-              <span className={`text-sm ${githubConnected ? 'text-teal-300' : 'text-zinc-300'}`}>
-                {githubConnected ? 'GitHub connected' : 'Connect GitHub'}
               </span>
             </div>
           </button>
         </div>
 
-        {!bothDone && (
-          <p className="text-xs text-zinc-600">
-            {resumeUploaded
-              ? 'Almost there — connect GitHub to unlock your scores'
-              : githubConnected
-              ? 'Almost there — upload your resume to unlock your scores'
-              : 'Complete both steps to unlock your verified skill score'}
+        {!resumeUploaded && (
+          <p className="text-xs text-zinc-500">
+            Upload your resume to calculate your score and view personalized opportunities
           </p>
         )}
       </Card>
@@ -116,16 +69,6 @@ export function LockedState({
         open={resumeModalOpen}
         onClose={() => setResumeModalOpen(false)}
         onConfirm={handleResumeConfirm}
-      />
-
-      <GitHubConnectModal
-        open={githubModalOpen}
-        onClose={() => { setGithubModalOpen(false); dismissGithubMismatch(); }}
-        onConnectOAuth={handleGithubOAuth}
-        onConnectManual={handleGithubManual}
-        onConfirmMismatch={handleConfirmMismatch}
-        mismatchEmail={githubEmailMismatch}
-        userEmail={profile.email}
       />
     </>
   );
@@ -137,14 +80,14 @@ export function AnalyzingState() {
       <div className="flex justify-center mb-6">
         <SkillProofLogo variant="full" size="md" layout="vertical" animated />
       </div>
-      <h3 className="text-xl font-bold text-zinc-100 mb-2">Analyzing your profile...</h3>
+      <h3 className="text-xl font-bold text-zinc-100 mb-2">Analyzing your resume...</h3>
       <p className="text-sm text-zinc-400 max-w-sm mx-auto">
-        Cross-referencing your GitHub activity and resume against external skill benchmarks.
+        Extracting technical skills, experience metrics, and project evidence against role benchmarks.
         This usually takes a few seconds.
       </p>
       <div className="mt-6 flex items-center justify-center gap-2 text-xs text-zinc-600">
         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-        <span>Comparing repo complexity to industry benchmarks</span>
+        <span>Evaluating skill statements, metrics, and section depth</span>
       </div>
     </Card>
   );

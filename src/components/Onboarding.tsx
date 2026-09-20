@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ShieldCheck, Github, FileText, ArrowRight, CheckCircle2, Loader2, AlertCircle, Upload } from 'lucide-react';
+import { FileText, ArrowRight, CheckCircle2, Loader2, AlertCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { SkillProofLogo } from '@/components/SkillProofLogo';
 
@@ -22,48 +22,13 @@ interface OnboardingProps {
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
-  const { profile, connectGithub, githubEmailMismatch, dismissGithubMismatch, uploadResume } = useAuth();
-  const [connecting, setConnecting] = useState(false);
-  const [githubInput, setGithubInput] = useState('');
-  const [githubError, setGithubError] = useState<string | null>(null);
-  const [githubConnectAnyway, setGithubConnectAnyway] = useState(false);
+  const { profile, uploadResume } = useAuth();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isGithubConnected = profile.githubConnected;
   const isResumeUploaded = profile.resumeUploaded;
-
-  const handleConnectGithub = async () => {
-    setGithubError(null);
-    setConnecting(true);
-    try {
-      const { error, mismatch } = await connectGithub(githubInput.trim());
-      if (error) {
-        setGithubError(error);
-      } else if (mismatch) {
-        setGithubConnectAnyway(true);
-      } else {
-        setGithubInput('');
-      }
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const handleConnectAnyway = async () => {
-    setGithubError(null);
-    setConnecting(true);
-    try {
-      const { error } = await connectGithub(githubInput.trim(), true);
-      if (error) setGithubError(error);
-      setGithubConnectAnyway(false);
-      setGithubInput('');
-    } finally {
-      setConnecting(false);
-    }
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setResumeError(null);
@@ -92,8 +57,6 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const canProceed = isGithubConnected || isResumeUploaded;
-
   return (
     <div className="min-h-screen bg-[#0a0a0b] flex flex-col">
       <header className="border-b border-zinc-800/50 glass">
@@ -116,93 +79,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               Welcome{profile.name ? `, ${profile.name}` : ''}!
             </h1>
             <p className="text-zinc-400 max-w-md mx-auto">
-              Let's set up your verified skill profile. Connect at least one source
-              so SkillProof AI can start building your evidence-backed profile.
+              Let's set up your verified skill profile. Upload your resume so SkillProof AI can
+              analyze your skills, calculate your score, and unlock job matches.
             </p>
           </div>
 
           <div className="space-y-4 mb-8">
-            {/* GitHub */}
-            <div className={`p-6 rounded-2xl border bg-zinc-900/40 transition-all ${
-              isGithubConnected ? 'border-teal-500/30' : 'border-zinc-800'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
-                    isGithubConnected ? 'bg-teal-500/10 border border-teal-500/20' : 'bg-zinc-800/50 border border-zinc-700/50'
-                  }`}>
-                    {isGithubConnected ? (
-                      <CheckCircle2 className="w-6 h-6 text-teal-500" />
-                    ) : (
-                      <Github className="w-6 h-6 text-zinc-400" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-zinc-100">Connect GitHub</h3>
-                    <p className="text-sm text-zinc-500">
-                      {isGithubConnected
-                        ? `Connected as ${profile.githubUsername} — repositories being analyzed`
-                        : 'Pull code evidence from your repositories'}
-                    </p>
-                  </div>
-                </div>
-                {!isGithubConnected && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={githubInput}
-                      onChange={(e) => setGithubInput(e.target.value)}
-                      placeholder="GitHub username"
-                      className="w-32 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-sm outline-none focus:border-blue-600 transition-colors placeholder-zinc-600"
-                    />
-                    <button
-                      onClick={handleConnectGithub}
-                      disabled={connecting || !githubInput.trim()}
-                      className="press-scale flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium transition-colors disabled:opacity-50"
-                    >
-                      {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      Connect
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {githubError && (
-                <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-red-950/40 border border-red-900/50 text-sm text-red-400">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{githubError}</span>
-                </div>
-              )}
-
-              {githubConnectAnyway && githubEmailMismatch && (
-                <div className="mt-3 p-4 rounded-lg bg-amber-950/40 border border-amber-900/50">
-                  <div className="flex items-start gap-2 mb-3">
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-300">
-                      This GitHub account uses a different email ({githubEmailMismatch}) than your
-                      SkillProof AI account ({profile.email}). Connect anyway or use the matching account?
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleConnectAnyway}
-                      disabled={connecting}
-                      className="press-scale px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
-                    >
-                      {connecting ? 'Connecting...' : 'Connect anyway'}
-                    </button>
-                    <button
-                      onClick={() => { dismissGithubMismatch(); setGithubConnectAnyway(false); setGithubInput(''); }}
-                      className="press-scale px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-zinc-600 text-zinc-300 text-xs font-medium transition-colors"
-                    >
-                      Use matching account
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Resume */}
+            {/* Resume Card */}
             <div className={`p-6 rounded-2xl border bg-zinc-900/40 transition-all ${
               isResumeUploaded ? 'border-teal-500/30' : 'border-zinc-800'
             }`}>
@@ -288,7 +171,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </button>
             <button
               onClick={onComplete}
-              disabled={!canProceed}
+              disabled={!isResumeUploaded}
               className="press-scale group flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continue to dashboard
