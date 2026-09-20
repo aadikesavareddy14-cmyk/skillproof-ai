@@ -10,13 +10,13 @@ export interface SkillProofLogoProps extends React.ImgHTMLAttributes<HTMLImageEl
 }
 
 const sizeClasses: Record<string, string> = {
-  xs: 'h-8 max-w-[100px]',
-  sm: 'h-9 max-w-[110px]',
-  navbar: 'h-11 max-w-[140px]',
-  md: 'h-14 max-w-[170px]',
-  lg: 'h-20 max-w-[240px]',
-  auth: 'h-32 sm:h-36 max-w-[280px]',
-  xl: 'h-40 max-w-[320px]',
+  xs: 'h-8 w-8',
+  sm: 'h-9 w-9',
+  navbar: 'h-10 sm:h-11 w-10 sm:w-11',
+  md: 'h-14 w-14',
+  lg: 'h-20 w-20',
+  auth: 'h-24 sm:h-28 w-24 sm:w-28',
+  xl: 'h-32 w-32',
 };
 
 export function SkillProofLogo({
@@ -42,8 +42,8 @@ export function SkillProofLogo({
         animated ? 'animate-pulse' : ''
       } ${sizeClass} ${className}`}
       style={{
-        ...(isCustomSize ? { height: `${size}px`, width: 'auto' } : {}),
-        aspectRatio: '860 / 696',
+        ...(isCustomSize ? { height: `${size}px`, width: `${size}px` } : {}),
+        aspectRatio: '1 / 1',
         ...style,
       }}
       {...props}
@@ -53,7 +53,7 @@ export function SkillProofLogo({
 
 // Re-export for compatibility with any existing imports
 export const SkillProofCube = ({
-  size = 36,
+  size = 34,
   className = '',
   animated = false,
 }: {
@@ -63,9 +63,10 @@ export const SkillProofCube = ({
 }) => {
   return (
     <SkillProofLogo
-      size={typeof size === 'number' ? size : 36}
+      size={typeof size === 'number' ? size : 34}
       animated={animated}
       className={className}
     />
   );
 };
+
