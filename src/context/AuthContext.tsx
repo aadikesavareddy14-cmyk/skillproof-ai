@@ -26,6 +26,9 @@ interface AuthContextValue {
   isNewUser: boolean;
   setIsNewUser: (val: boolean) => void;
   uploadResume: (fileName: string, fileSize: number, score?: number, previousScore?: number | null) => Promise<void>;
+  updateAvatar: (avatarUrl: string | null) => Promise<void>;
+  uploadAvatarFile: (file: File) => Promise<{ url: string | null; error: string | null }>;
+  removeAvatar: () => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
@@ -47,12 +50,13 @@ function extractProfile(
   resumeFileName: string | null,
   resumeScore: number,
   resumePreviousScore: number | null,
+  customAvatarUrl: string | null,
 ): UserProfile {
   if (!user) {
     return {
       name: null,
       email: null,
-      avatarUrl: null,
+      avatarUrl: customAvatarUrl,
       provider: null,
       resumeUploaded: false,
       resumeFileName: null,
@@ -80,6 +84,7 @@ function extractProfile(
     (googleData.given_name ? `${googleData.given_name} ${googleData.family_name ?? ''}`.trim() : null);
 
   const resolvedAvatar =
+    customAvatarUrl ??
     meta.avatar_url ??
     meta.picture ??
     (googleData.avatar_url as string) ??
@@ -107,6 +112,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [resumeScore, setResumeScore] = useState<number>(0);
   const [resumePreviousScore, setResumePreviousScore] = useState<number | null>(null);
+  const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('sp_avatar_url');
+    } catch {
+      return null;
+    }
+  });
 
   const refreshIdentities = async () => {
     try {
@@ -380,6 +392,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const updateAvatar = async (avatarUrl: string | null) => {
+    setCustomAvatarUrl(avatarUrl);
+    try {
+      if (avatarUrl) {
+        localStorage.setItem('sp_avatar_url', avatarUrl);
+      } else {
+        localStorage.removeItem('sp_avatar_url');
+      }
+    } catch (e) {
+      console.warn('localStorage error:', e);
+    }
+    if (session?.user) {
+      try {
+        await supabase.auth.updateUser({
+          data: { avatar_url: avatarUrl },
+        });
+      } catch (err) {
+        console.debug('Failed to updateUser metadata:', err);
+      }
+    }
+    await upsertProfileState({ avatar_url: avatarUrl });
+  };
+
+  const uploadAvatarFile = async (file: File): Promise<{ url: string | null; error: string | null }> => {
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileName = `${session?.user?.id || 'user'}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Try uploading to Supabase Storage bucket 'avatars'
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (!uploadErr && uploadData) {
+        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        if (publicUrlData?.publicUrl) {
+          await updateAvatar(publicUrlData.publicUrl);
+          return { url: publicUrlData.publicUrl, error: null };
+        }
+      }
+
+      // Seamless fallback: read as base64 data URL
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      await updateAvatar(dataUrl);
+      return { url: dataUrl, error: null };
+    } catch (err) {
+      console.error('[uploadAvatarFile Exception]:', err);
+      const msg = err instanceof Error ? err.message : 'Failed to upload photo';
+      return { url: null, error: msg };
+    }
+  };
+
+  const removeAvatar = async () => {
+    await updateAvatar(null);
+  };
+
   const completeOnboarding = async () => {
     setIsNewUser(false);
   };
@@ -392,6 +467,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setResumeFileName(null);
     setResumeScore(0);
     setResumePreviousScore(null);
+    setCustomAvatarUrl(null);
+    try {
+      localStorage.removeItem('sp_avatar_url');
+    } catch {
+      // ignore storage error
+    }
     setIdentities([]);
   };
 
@@ -402,12 +483,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         session,
         user,
-        profile: extractProfile(user, resumeUploaded, resumeFileName, resumeScore, resumePreviousScore),
+        profile: extractProfile(user, resumeUploaded, resumeFileName, resumeScore, resumePreviousScore, customAvatarUrl),
         identities,
         loading,
         isNewUser,
         setIsNewUser,
         uploadResume,
+        updateAvatar,
+        uploadAvatarFile,
+        removeAvatar,
         signUp,
         signIn,
         signInWithGoogle,

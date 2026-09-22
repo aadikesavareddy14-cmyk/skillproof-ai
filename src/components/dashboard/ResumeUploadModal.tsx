@@ -7,7 +7,7 @@ interface ResumeUploadModalProps {
   onConfirm: (file: File) => void;
 }
 
-const ACCEPTED_TYPES = ['.pdf', '.doc', '.docx'];
+const ACCEPTED_TYPES = ['.pdf', '.doc', '.docx', '.txt'];
 const MAX_SIZE = 5 * 1024 * 1024;
 
 function formatSize(bytes: number): string {

@@ -171,3 +171,36 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header, nav, aside, .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  #resume-printable-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  @page {
+    margin: 12mm 12mm 12mm 12mm;
+    size: letter portrait;
+  }
+}
+

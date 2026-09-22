@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   Sparkles,
   Lightbulb,
-  FileText,
   Layers,
 } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
@@ -16,6 +15,7 @@ import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { LockedState } from '@/components/dashboard/LockedState';
 import { useAuth } from '@/context/AuthContext';
 import { computeScores } from '@/lib/scoringService';
+import type { QualitativeScoreTier } from '@/lib/resumeData';
 import type { DashboardPage } from '@/components/dashboard/Sidebar';
 
 interface OverviewPageProps {
@@ -64,10 +64,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     );
   }
 
-  const qualitativeVariant: Record<'Needs Work' | 'Good' | 'Strong', 'error' | 'warning' | 'success'> = {
-    'Needs Work': 'error',
+  const qualitativeVariant: Record<QualitativeScoreTier, 'error' | 'warning' | 'success' | 'info'> = {
+    'Needs Major Work': 'error',
+    'Below Average': 'warning',
     Good: 'warning',
-    Strong: 'success',
+    Strong: 'info',
+    Excellent: 'success',
   };
 
   const stats = [
@@ -166,50 +168,49 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             )}
           </div>
 
-          <p className="text-xs text-zinc-500 mt-4 max-w-xs leading-relaxed">
-            Evaluated on statement clarity, quantifiable metrics, keywords, structure, and completeness.
+          <p className="text-xs text-zinc-400 mt-4 max-w-xs leading-relaxed">
+            Evaluated on 100-point rubric: Contact, Summary, Experience, Projects, Skills, Education, Formatting, and Keywords.
           </p>
         </Card>
 
-        {/* 5 Factors Breakdown */}
+        {/* 8-Category Rubric Breakdown */}
         <Card hover={false} className="p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-500" />
-              <h3 className="text-base font-semibold text-zinc-200">Scoring Factors Breakdown</h3>
+              <h3 className="text-base font-semibold text-zinc-200">100-Point Scoring Rubric Breakdown</h3>
             </div>
             <button
               onClick={() => onNavigate('profile')}
-              className="text-xs text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
+              className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
             >
               Full analysis <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
 
-          <div className="space-y-3.5">
-            {scoringResult.factors.map((factor) => {
-              const pct = Math.round((factor.score / factor.maxScore) * 100);
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+            {scoringResult.rubricSections.map((sec) => {
+              const pct = Math.round((sec.score / sec.maxScore) * 100);
               return (
-                <div key={factor.key} className="space-y-1">
+                <div key={sec.id} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-zinc-300">{factor.name}</span>
-                    <span className="tabular-nums font-semibold text-zinc-200">
-                      {factor.score}/{factor.maxScore} pts
+                    <span className="font-medium text-zinc-300 truncate">{sec.name}</span>
+                    <span className="tabular-nums font-semibold text-zinc-200 shrink-0">
+                      {sec.score}/{sec.maxScore} pts
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        pct >= 85
-                          ? 'bg-gradient-to-r from-blue-500 to-teal-400'
-                          : pct >= 65
-                          ? 'bg-gradient-to-r from-blue-500 to-amber-400'
-                          : 'bg-gradient-to-r from-amber-500 to-red-500'
+                        pct >= 80
+                          ? 'bg-gradient-to-r from-teal-500 to-emerald-400'
+                          : pct >= 60
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                          : 'bg-gradient-to-r from-red-500 to-rose-400'
                       }`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="text-[11px] text-zinc-500 leading-tight">{factor.description}</p>
                 </div>
               );
             })}
