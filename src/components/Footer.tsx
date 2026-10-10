@@ -1,4 +1,4 @@
-import { ShieldCheck } from 'lucide-react';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 const footerLinks = {
   Product: ['How it works', 'Features', 'Pricing', 'FAQ'],
@@ -12,11 +12,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <ShieldCheck className="w-6 h-6 text-blue-500" strokeWidth={2.2} />
-              <span className="text-lg font-semibold tracking-tight">
-                SkillProof<span className="text-blue-500"> AI</span>
-              </span>
+            <div className="mb-4">
+              <SkillProofLogo variant="lockup" size="navbar" />
             </div>
             <p className="text-sm text-zinc-500 leading-relaxed max-w-xs">
               Don't trust the resume. Verify the skill. AI-powered career

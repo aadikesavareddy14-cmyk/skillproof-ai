@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" fill="none">
+  <defs>
+    <linearGradient id="sp-top-f" x1="18" y1="16" x2="82" y2="53" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="sp-left-f" x1="18" y1="34" x2="50" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="sp-right-f" x1="50" y1="53" x2="82" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="60%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <radialGradient id="sp-glow-f" cx="50" cy="50" r="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#2563eb" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ai-grad-f" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="trophy-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="cube-shadow-f" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#2563eb" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Cube Icon scaled to 70x70, offset (10, 15) -->
+  <g transform="translate(10, 15) scale(0.7)">
+    <circle cx="50" cy="50" r="42" fill="url(#sp-glow-f)"/>
+    <g filter="url(#cube-shadow-f)">
+      <polygon points="50,16 82,34.5 50,53 18,34.5" fill="url(#sp-top-f)" stroke="#7dd3fc" stroke-width="0.8" stroke-linejoin="round"/>
+      <polygon points="18,34.5 50,53 50,84 18,65.5" fill="url(#sp-left-f)" stroke="#60a5fa" stroke-width="0.8" stroke-linejoin="round"/>
+      <polygon points="50,53 82,34.5 82,65.5 50,84" fill="url(#sp-right-f)" stroke="#3b82f6" stroke-width="0.8" stroke-linejoin="round"/>
+      <polygon points="50,29 67,38.8 50,48.6 33,38.8" fill="#ffffff" fill-opacity="0.22"/>
+      <polygon points="33,38.8 50,48.6 50,65.5 33,55.7" fill="#ffffff" fill-opacity="0.1"/>
+      <polygon points="50,48.6 67,38.8 67,55.7 50,65.5" fill="#000000" fill-opacity="0.18"/>
+      <circle cx="50" cy="53" r="2.5" fill="#e0f2fe"/>
+      <circle cx="50" cy="53" r="1.2" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="94" y="47" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="26" font-weight="700" letter-spacing="-0.02em">
+    <tspan fill="#ffffff">SkillProof</tspan>
+    <tspan fill="url(#ai-grad-f)" dx="5">AI</tspan>
+  </text>
+
+  <!-- Tagline: Trophy + PROVE SKILLS -->
+  <g transform="translate(95, 62)">
+    <!-- Trophy Icon -->
+    <g transform="translate(0, 0) scale(0.85)">
+      <path d="M4 2 H14 V7 C14 10.3 11.3 13 8 13 C4.7 13 2 10.3 2 7 V2 H4 Z" fill="url(#trophy-gold)"/>
+      <path d="M2 3.5 H0.5 C0.2 3.5 0 3.7 0 4 C0 6 1 7.5 2.5 7.8 L2 6" stroke="#fbbf24" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M14 3.5 H15.5 C15.8 3.5 16 3.7 16 4 C16 6 15 7.5 13.5 7.8 L14 6" stroke="#fbbf24" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M7 13 V15 H9 V13" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+      <path d="M4.5 15.5 H11.5" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <!-- Tagline Text -->
+    <text x="22" y="12" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#94a3b8" letter-spacing="0.22em">
+      PROVE SKILLS
+    </text>
+  </g>
+</svg>

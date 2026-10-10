@@ -11,6 +11,7 @@ import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import { Dashboard } from '@/components/Dashboard';
 import { Onboarding } from '@/components/Onboarding';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 type Route = 'landing' | 'onboarding' | 'dashboard';
 type AuthMode = 'signin' | 'signup';
@@ -92,8 +93,12 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-zinc-700 border-t-blue-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#0a0a0b] flex flex-col items-center justify-center p-6">
+        <SkillProofLogo variant="full" size="auth" animated />
+        <div className="mt-8 flex items-center gap-2 text-xs text-zinc-500">
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <span>Loading verified environment...</span>
+        </div>
       </div>
     );
   }

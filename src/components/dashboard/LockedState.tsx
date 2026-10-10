@@ -4,6 +4,7 @@ import { Card } from '@/components/dashboard/Card';
 import { ResumeUploadModal } from '@/components/dashboard/ResumeUploadModal';
 import { GitHubConnectModal } from '@/components/dashboard/GitHubConnectModal';
 import { useAuth } from '@/context/AuthContext';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 interface LockedStateProps {
   resumeUploaded: boolean;
@@ -133,8 +134,8 @@ export function LockedState({
 export function AnalyzingState() {
   return (
     <Card hover={false} gradient className="p-10 max-w-xl mx-auto text-center">
-      <div className="w-16 h-16 rounded-2xl bg-blue-600/10 border border-blue-600/20 flex items-center justify-center mx-auto mb-6">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="flex justify-center mb-6">
+        <SkillProofLogo variant="full" size="md" layout="vertical" animated />
       </div>
       <h3 className="text-xl font-bold text-zinc-100 mb-2">Analyzing your profile...</h3>
       <p className="text-sm text-zinc-400 max-w-sm mx-auto">

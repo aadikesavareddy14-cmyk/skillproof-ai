@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import { SkillProofLogo } from '@/components/SkillProofLogo';
 
 interface NavbarProps {
   onLogIn: () => void;
@@ -25,12 +26,9 @@ export function Navbar({ onLogIn, onGetStarted, onSeeHowItWorks }: NavbarProps) 
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-7 h-7 text-blue-500" strokeWidth={2.2} />
-            <span className="text-lg font-semibold tracking-tight">
-              SkillProof<span className="text-blue-500"> AI</span>
-            </span>
-          </div>
+          <a href="#" className="flex items-center focus:outline-none">
+            <SkillProofLogo variant="lockup" size="navbar" />
+          </a>
 
           <div className="hidden md:flex items-center gap-8">
             <button onClick={onSeeHowItWorks} className="text-sm text-zinc-400 hover:text-white transition-colors">
