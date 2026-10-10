@@ -171,6 +171,15 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <p className="text-xs text-zinc-400 mt-4 max-w-xs leading-relaxed">
             Evaluated on 100-point rubric: Contact, Summary, Experience, Projects, Skills, Education, Formatting, and Keywords.
           </p>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('resume')}
+            className="press-scale mt-5 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30 text-xs font-semibold transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Open Resume Generator <ArrowUpRight className="w-3 h-3" />
+          </button>
         </Card>
 
         {/* 8-Category Rubric Breakdown */}
@@ -181,10 +190,10 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               <h3 className="text-base font-semibold text-zinc-200">100-Point Scoring Rubric Breakdown</h3>
             </div>
             <button
-              onClick={() => onNavigate('profile')}
+              onClick={() => onNavigate('resume')}
               className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
             >
-              Full analysis <ArrowUpRight className="w-3 h-3" />
+              AI Resume & Score <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
 

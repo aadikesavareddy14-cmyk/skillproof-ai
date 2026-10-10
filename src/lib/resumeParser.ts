@@ -116,40 +116,106 @@ export function parseResumeRawText(text: string, fileName = 'resume.txt'): {
   }
 
   // 2. Segment into Sections
-  type SectionKey = 'summary' | 'experience' | 'projects' | 'skills' | 'education' | 'other';
+  type SectionKey =
+    | 'summary'
+    | 'experience'
+    | 'internships'
+    | 'projects'
+    | 'skills'
+    | 'softSkills'
+    | 'education'
+    | 'certifications'
+    | 'achievements'
+    | 'courses'
+    | 'spokenLanguages'
+    | 'hobbies'
+    | 'other';
+
   const sections: Record<SectionKey, string[]> = {
     summary: [],
     experience: [],
+    internships: [],
     projects: [],
     skills: [],
+    softSkills: [],
     education: [],
+    certifications: [],
+    achievements: [],
+    courses: [],
+    spokenLanguages: [],
+    hobbies: [],
     other: [],
   };
 
+  const customSectionsMap: Record<string, string[]> = {};
   let currentSection: SectionKey = 'other';
+  let currentCustomTitle = '';
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     const lower = line.toLowerCase().replace(/[:#*_-]/g, '').trim();
 
-    if (/^(professional\s+summary|summary|profile|about\s+me|objective)$/i.test(lower)) {
+    if (/^(professional\s+summary|summary|profile|about\s+me|objective|career\s+objective)$/i.test(lower)) {
       currentSection = 'summary';
+      currentCustomTitle = '';
       continue;
-    } else if (/^(work\s+experience|experience|employment\s+history|professional\s+experience)$/i.test(lower)) {
+    } else if (/^(internship|internships|summer\s+internship|industrial\s+training)$/i.test(lower)) {
+      currentSection = 'internships';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(work\s+experience|experience|employment\s+history|professional\s+experience|work\s+history)$/i.test(lower)) {
       currentSection = 'experience';
+      currentCustomTitle = '';
       continue;
-    } else if (/^(projects|technical\s+projects|selected\s+projects|personal\s+projects)$/i.test(lower)) {
+    } else if (/^(projects|technical\s+projects|selected\s+projects|personal\s+projects|academic\s+projects)$/i.test(lower)) {
       currentSection = 'projects';
+      currentCustomTitle = '';
       continue;
-    } else if (/^(skills|technical\s+skills|core\s+competencies|technologies|tools)$/i.test(lower)) {
+    } else if (/^(soft\s+skills|interpersonal\s+skills|core\s+strengths)$/i.test(lower)) {
+      currentSection = 'softSkills';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(skills|technical\s+skills|core\s+competencies|technologies|tools|programming\s+languages)$/i.test(lower)) {
       currentSection = 'skills';
+      currentCustomTitle = '';
       continue;
-    } else if (/^(education|academic\s+background|academic\s+history)$/i.test(lower)) {
+    } else if (/^(education|academic\s+background|academic\s+history|qualification|qualifications)$/i.test(lower)) {
       currentSection = 'education';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(certifications|certificates|licenses|credentials|certified)$/i.test(lower)) {
+      currentSection = 'certifications';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(achievements|awards|honors|accomplishments|recognitions)$/i.test(lower)) {
+      currentSection = 'achievements';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(courses|coursework|training|relevant\s+coursework)$/i.test(lower)) {
+      currentSection = 'courses';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(languages|spoken\s+languages|language\s+proficiency)$/i.test(lower)) {
+      currentSection = 'spokenLanguages';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^(hobbies|interests|extracurricular|extracurricular\s+activities|activities)$/i.test(lower)) {
+      currentSection = 'hobbies';
+      currentCustomTitle = '';
+      continue;
+    } else if (/^[A-Z][A-Za-z\s]{3,25}$/.test(line) && !line.includes(',') && !line.includes('.')) {
+      // Possible custom section header (e.g., "Publications", "Volunteering")
+      currentCustomTitle = line;
+      currentSection = 'other';
+      if (!customSectionsMap[currentCustomTitle]) customSectionsMap[currentCustomTitle] = [];
       continue;
     }
 
-    sections[currentSection].push(line);
+    if (currentCustomTitle && customSectionsMap[currentCustomTitle]) {
+      customSectionsMap[currentCustomTitle].push(line);
+    } else {
+      sections[currentSection].push(line);
+    }
   }
 
   // 3. Parse Professional Summary
@@ -374,6 +440,143 @@ export function parseResumeRawText(text: string, fileName = 'resume.txt'): {
     }
   }
 
+  // 8. Parse Internships
+  const internships: ResumeExperienceEntry[] = [];
+  const internLines = sections.internships;
+  if (internLines.length > 0) {
+    let currentIntern: ResumeExperienceEntry | null = null;
+    for (let i = 0; i < internLines.length; i++) {
+      const line = internLines[i];
+      const isBullet = /^[•\-*]|\d+\.\s/.test(line);
+      const dateMatch = line.match(
+        /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|[0-9]{4})\b.*?[-–—to]+\s*(?:Present|[0-9]{4}|Current|Now)\b/i,
+      );
+
+      if (!isBullet && (dateMatch || line.includes('|') || line.includes(' - ') || !currentIntern)) {
+        if (currentIntern && (currentIntern.bullets.length > 0 || currentIntern.role)) {
+          internships.push(currentIntern);
+        }
+        const parts = line.split(/[|•–—]/).map((p) => p.trim());
+        const role = parts[0] || 'Intern';
+        const company = parts[1] || '';
+        const period = dateMatch ? dateMatch[0] : parts[2] || '';
+        const internLocation = parts[3] || (line.toLowerCase().includes('remote') ? 'Remote' : '');
+
+        currentIntern = {
+          id: `intern-${internships.length + 1}`,
+          role,
+          company,
+          location: internLocation,
+          period,
+          bullets: [],
+        };
+      } else if (currentIntern) {
+        const cleanBullet = line.replace(/^[•\-*]\s*|\d+\.\s*/, '').trim();
+        if (cleanBullet.length > 5) {
+          currentIntern.bullets.push(cleanBullet);
+        }
+      }
+    }
+    if (currentIntern && (currentIntern.bullets.length > 0 || currentIntern.role)) {
+      internships.push(currentIntern);
+    }
+  }
+
+  // 9. Parse Soft Skills
+  const softSkillsList: string[] = [];
+  for (const sLine of sections.softSkills) {
+    const tokens = sLine
+      .replace(/^[•\-*]\s*/, '')
+      .split(/[,;|•·/]/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 2 && t.length < 40);
+    softSkillsList.push(...tokens);
+  }
+
+  // 10. Parse Certifications
+  const certifications: { id: string; name: string; issuer?: string; date?: string }[] = [];
+  for (const cLine of sections.certifications) {
+    const clean = cLine.replace(/^[•\-*]\s*/, '').trim();
+    if (!clean) continue;
+    const parts = clean.split(/[|•–—]/).map((p) => p.trim());
+    const dateMatch = clean.match(/\b(19|20)\d{2}\b/);
+    certifications.push({
+      id: `cert-${certifications.length + 1}`,
+      name: parts[0],
+      issuer: parts[1] || undefined,
+      date: dateMatch ? dateMatch[0] : (parts[2] || undefined),
+    });
+  }
+
+  // 11. Parse Achievements
+  const achievements: { id: string; title: string; description?: string; date?: string }[] = [];
+  for (const aLine of sections.achievements) {
+    const clean = aLine.replace(/^[•\-*]\s*/, '').trim();
+    if (!clean) continue;
+    const parts = clean.split(/[|•–—]/).map((p) => p.trim());
+    achievements.push({
+      id: `ach-${achievements.length + 1}`,
+      title: parts[0],
+      description: parts.length > 1 ? parts.slice(1).join(' - ') : undefined,
+    });
+  }
+
+  // 12. Parse Courses
+  const courses: { id: string; name: string; institution?: string }[] = [];
+  for (const crsLine of sections.courses) {
+    const clean = crsLine.replace(/^[•\-*]\s*/, '').trim();
+    if (!clean) continue;
+    const parts = clean.split(/[|•–—]/).map((p) => p.trim());
+    courses.push({
+      id: `crs-${courses.length + 1}`,
+      name: parts[0],
+      institution: parts[1] || undefined,
+    });
+  }
+
+  // 13. Parse Spoken Languages
+  const spokenLanguages: { id: string; language: string; proficiency?: string }[] = [];
+  for (const langLine of sections.spokenLanguages) {
+    const clean = langLine.replace(/^[•\-*]\s*/, '').trim();
+    if (!clean) continue;
+    const tokens = clean.split(/[,;|•]/).map((t) => t.trim()).filter(Boolean);
+    for (const tok of tokens) {
+      const match = tok.match(/^([A-Za-z\s]+)(?:\((.*?)\)|[-–—:]\s*(.*))?$/);
+      if (match) {
+        spokenLanguages.push({
+          id: `lang-${spokenLanguages.length + 1}`,
+          language: match[1].trim(),
+          proficiency: (match[2] || match[3] || '').trim() || undefined,
+        });
+      } else {
+        spokenLanguages.push({
+          id: `lang-${spokenLanguages.length + 1}`,
+          language: tok,
+        });
+      }
+    }
+  }
+
+  // 14. Parse Hobbies / Interests
+  const hobbiesList: string[] = [];
+  for (const hLine of sections.hobbies) {
+    const tokens = hLine
+      .replace(/^[•\-*]\s*/, '')
+      .split(/[,;|•·]/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 1 && t.length < 35);
+    hobbiesList.push(...tokens);
+  }
+
+  // 15. Parse Custom Sections
+  const customSections = Object.entries(customSectionsMap)
+    .filter(([_, contentLines]) => contentLines.length > 0)
+    .map(([title, contentLines], idx) => ({
+      id: `custom-${idx + 1}`,
+      title,
+      content: contentLines.map((l) => l.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean),
+    }));
+
   const structuredContent: ResumeStructuredContent = {
     name: name || '',
     title: title || '',
@@ -385,14 +588,22 @@ export function parseResumeRawText(text: string, fileName = 'resume.txt'): {
     portfolio,
     summary,
     experience,
+    internships: internships.length > 0 ? internships : undefined,
     projects,
     skills: {
       languages: Array.from(languagesList),
       frameworks: Array.from(frameworksList),
       databases: Array.from(databasesList),
       tools: Array.from(toolsList),
+      softSkills: softSkillsList.length > 0 ? Array.from(new Set(softSkillsList)) : undefined,
     },
     education,
+    certifications: certifications.length > 0 ? certifications : undefined,
+    achievements: achievements.length > 0 ? achievements : undefined,
+    courses: courses.length > 0 ? courses : undefined,
+    spokenLanguages: spokenLanguages.length > 0 ? spokenLanguages : undefined,
+    hobbies: hobbiesList.length > 0 ? Array.from(new Set(hobbiesList)) : undefined,
+    customSections: customSections.length > 0 ? customSections : undefined,
   };
 
   return {

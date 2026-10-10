@@ -1,719 +1,820 @@
-import { useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Download,
-  ArrowLeft,
   Mail,
   Phone,
   MapPin,
   Linkedin,
   Github,
+  Globe,
   Sparkles,
+  Camera,
+  CheckCircle2,
+  SplitSquareVertical,
+  ArrowLeft,
+  Info,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import type { ResumeStructuredContent } from '@/lib/resumeData';
-import type { ResumeTemplateMeta } from '@/lib/resumeTemplatesData';
+import { Card } from '@/components/dashboard/Card';
+import { Badge } from '@/components/dashboard/Badge';
+import type {
+  ResumeStructuredContent,
+  GrammarCorrection,
+} from '@/lib/resumeData';
+import { downloadAtsResumePdf } from '@/lib/pdfGenerator';
 
 interface ResumeLivePreviewProps {
-  template: ResumeTemplateMeta;
   content: ResumeStructuredContent;
-  onBackToGallery: () => void;
+  originalContent: ResumeStructuredContent;
+  rawText?: string;
+  fileName?: string;
   onModifyWithAi?: () => void;
+  onBackToGrammar?: () => void;
+  appliedCorrectionsCount?: number;
+  corrections?: GrammarCorrection[];
 }
 
 export function ResumeLivePreview({
-  template,
   content,
-  onBackToGallery,
+  originalContent,
+  rawText,
+  fileName,
   onModifyWithAi,
+  onBackToGrammar,
+  appliedCorrectionsCount = 0,
+  corrections = [],
 }: ResumeLivePreviewProps) {
   const { profile } = useAuth();
-  const resumeRef = useRef<HTMLDivElement>(null);
-
   const avatar = profile.avatarUrl;
 
-  const handlePrintDownload = () => {
-    window.print();
+  // View mode: 'corrected' (default) | 'original' | 'compare'
+  const [viewMode, setViewMode] = useState<'corrected' | 'original' | 'compare'>('corrected');
+
+  // Include photo toggle: defaults to ON only if a photo was added
+  const [includePhoto, setIncludePhoto] = useState<boolean>(() => Boolean(avatar));
+
+  // Highlight changes toggle in preview
+  const [highlightChanges, setHighlightChanges] = useState(false);
+
+  // Download notification toast
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  const candidateName = (content.name || originalContent.name || 'Candidate')
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+  const pdfFileName = `${candidateName}_Resume_Corrected.pdf`;
+
+  // Update photo toggle if avatar changes
+  useEffect(() => {
+    if (avatar) {
+      setIncludePhoto(true);
+    }
+  }, [avatar]);
+
+  const [downloading, setDownloading] = useState(false);
+
+  // Handle PDF Download
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    setDownloadSuccess(true);
+    setTimeout(() => setDownloadSuccess(false), 5000);
+
+    try {
+      await downloadAtsResumePdf(content, {
+        includePhoto,
+        avatarUrl: avatar,
+      });
+    } catch (err) {
+      console.warn('Direct PDF download failed, falling back to browser print:', err);
+      const previousTitle = document.title;
+      document.title = `${candidateName}_Resume_Corrected`;
+      window.print();
+      document.title = previousTitle;
+    } finally {
+      setDownloading(false);
+    }
   };
+
+  // Handle downloading untouched original resume
+  const handleDownloadOriginal = () => {
+    const originalText =
+      rawText ||
+      [
+        originalContent.name,
+        originalContent.title,
+        [originalContent.email, originalContent.phone, originalContent.location]
+          .filter(Boolean)
+          .join(' | '),
+        originalContent.linkedin,
+        originalContent.github,
+        '',
+        'SUMMARY',
+        originalContent.summary,
+        '',
+        'EXPERIENCE',
+        ...(originalContent.experience || []).map(
+          (e) => `${e.role} | ${e.company} (${e.period})\n${e.bullets.map((b) => `• ${b}`).join('\n')}`,
+        ),
+        ...(originalContent.internships || []).map(
+          (e) => `[Internship] ${e.role} | ${e.company} (${e.period})\n${e.bullets.map((b) => `• ${b}`).join('\n')}`,
+        ),
+        '',
+        'PROJECTS',
+        ...(originalContent.projects || []).map(
+          (p) => `${p.title} (${p.technologies.join(', ')})\n${p.bullets.map((b) => `• ${b}`).join('\n')}`,
+        ),
+        '',
+        'SKILLS',
+        `Languages: ${originalContent.skills.languages?.join(', ') || ''}`,
+        `Frameworks: ${originalContent.skills.frameworks?.join(', ') || ''}`,
+        `Databases: ${originalContent.skills.databases?.join(', ') || ''}`,
+        `Tools: ${originalContent.skills.tools?.join(', ') || ''}`,
+        '',
+        'EDUCATION',
+        ...(originalContent.education || []).map(
+          (ed) => `${ed.degree} | ${ed.institution} (${ed.graduationDate})`,
+        ),
+      ].join('\n');
+
+    const downloadName = fileName
+      ? fileName.endsWith('.txt') || fileName.endsWith('.pdf')
+        ? fileName
+        : `${fileName}.txt`
+      : `${candidateName}_Resume_Original.txt`;
+
+    const blob = new Blob([originalText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = downloadName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const hasPhoto = Boolean(avatar);
 
   return (
     <div className="space-y-6 animate-fade-slide">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-zinc-800 bg-zinc-900/60 backdrop-blur-sm print:hidden">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBackToGallery}
-            className="press-scale p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-            title="Pick another template"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-zinc-100">Live Preview:</span>
-              <span className="text-sm font-bold text-blue-400">{template.name}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
-                {template.tag}
-              </span>
+      {/* Top Toolbar / Action Bar */}
+      <Card hover={false} className="p-4 sm:p-5 print:hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Left: View Mode Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-xl bg-zinc-900 border border-zinc-800 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('corrected')}
+                className={`press-scale px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'corrected'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Corrected Resume
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('original')}
+                className={`press-scale px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === 'original'
+                    ? 'bg-zinc-800 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                View Original
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('compare')}
+                className={`press-scale px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  viewMode === 'compare'
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <SplitSquareVertical className="w-3.5 h-3.5" />
+                Original vs Corrected
+              </button>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">{template.descriptor}</p>
+
+            {/* Toggle Highlight AI Changes */}
+            {viewMode !== 'original' && (
+              <button
+                type="button"
+                onClick={() => setHighlightChanges(!highlightChanges)}
+                className={`press-scale px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                  highlightChanges
+                    ? 'bg-teal-950/40 border-teal-500/40 text-teal-300'
+                    : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                {highlightChanges ? '✓ Changes highlighted' : 'Highlight changes'}
+              </button>
+            )}
+
+            {/* Photo Toggle */}
+            {hasPhoto && (
+              <label className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 text-xs text-zinc-300 cursor-pointer select-none hover:border-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={includePhoto}
+                  onChange={(e) => setIncludePhoto(e.target.checked)}
+                  className="rounded border-zinc-700 text-blue-600 focus:ring-0 focus:ring-offset-0 bg-zinc-800 w-3.5 h-3.5"
+                />
+                <span className="flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-blue-400" />
+                  Include photo
+                </span>
+              </label>
+            )}
+          </div>
+
+          {/* Right: Actions & Primary PDF Download */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {onBackToGrammar && (
+              <button
+                type="button"
+                onClick={onBackToGrammar}
+                className="text-xs text-zinc-400 hover:text-zinc-200 font-medium flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Review grammar
+              </button>
+            )}
+
+            {onModifyWithAi && (
+              <button
+                type="button"
+                onClick={onModifyWithAi}
+                className="press-scale flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-blue-400 border border-zinc-700 text-xs font-semibold transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Modify with AI
+              </button>
+            )}
+
+            {/* Untouched Original Download Link */}
+            <button
+              type="button"
+              onClick={handleDownloadOriginal}
+              className="text-xs text-zinc-400 hover:text-zinc-200 underline font-medium transition-colors"
+              title="Download untouched original upload"
+            >
+              Download original resume
+            </button>
+
+            {/* Single Download Corrected Resume (PDF) Button */}
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="press-scale flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 transition-all shrink-0 disabled:opacity-60"
+            >
+              {downloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Download corrected resume (PDF)
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {onModifyWithAi && (
-            <button
-              onClick={onModifyWithAi}
-              className="press-scale flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-blue-400 border border-zinc-700 text-xs font-semibold transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Modify with AI
-            </button>
-          )}
-          <button
-            onClick={onBackToGallery}
-            className="press-scale px-3.5 py-2 rounded-xl border border-zinc-700 hover:border-zinc-600 text-zinc-300 text-xs font-medium transition-colors"
-          >
-            Change template
-          </button>
-          <button
-            onClick={handlePrintDownload}
-            className="press-scale flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download as PDF
-          </button>
-        </div>
-      </div>
+        {/* ATS Guidance Banner & Filename Notice */}
+        <div className="mt-4 pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-zinc-400">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-zinc-300">Output:</span>
+            <span className="font-mono text-blue-400">{pdfFileName}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-zinc-400">
+              Single-column • ATS-optimized • Selectable text
+            </span>
+            {appliedCorrectionsCount > 0 && (
+              <Badge variant="success" size="sm">
+                {appliedCorrectionsCount} AI improvements applied
+              </Badge>
+            )}
+          </div>
 
-      {/* Printable Sheet Viewport */}
-      <div className="flex justify-center overflow-x-auto py-4">
-        <div
-          ref={resumeRef}
-          id="resume-printable-sheet"
-          className={`w-full max-w-[850px] min-h-[1100px] bg-white text-zinc-900 shadow-2xl rounded-xl sm:rounded-2xl p-8 sm:p-12 transition-all ${
-            template.id === 'classic-professional' || template.id === 'elegant-serif'
-              ? 'font-serif'
-              : 'font-sans'
-          }`}
-        >
-          {/* Template Renderer Selection */}
-          {template.id === 'two-column-compact' ? (
-            <TwoColumnLayout content={content} template={template} avatar={avatar} />
-          ) : template.id === 'creative-bold' || template.id === 'startup-modern-tech' ? (
-            <AccentHeaderLayout content={content} template={template} avatar={avatar} />
-          ) : (
-            <StandardSingleColumnLayout content={content} template={template} avatar={avatar} />
+          {hasPhoto && includePhoto && (
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-400/90">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              <span>Note: Photos are often discouraged for automated ATS parsing.</span>
+            </div>
           )}
         </div>
-      </div>
+      </Card>
+
+      {/* Download Success Confirmation Toast */}
+      {downloadSuccess && (
+        <div className="p-3.5 rounded-xl border border-teal-500/40 bg-teal-950/30 text-teal-200 text-xs flex items-center gap-2 animate-fade-slide print:hidden">
+          <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
+          <span>
+            Preparing <strong>{pdfFileName}</strong> for PDF download. In your print/save dialog, destination defaults to <em>Save as PDF</em> with full selectable text.
+          </span>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* RESUME VIEWPORT: SINGLE SHEET OR SIDE-BY-SIDE COMPARE                      */}
+      {/* ========================================================================= */}
+      {viewMode === 'compare' ? (
+        /* Side-by-Side: Original vs Corrected View */
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Original Sheet */}
+            <div className="space-y-2 print:hidden">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  Original Resume (Untouched)
+                </span>
+                <Badge variant="neutral" size="sm">Original Upload</Badge>
+              </div>
+              <div className="bg-white text-zinc-900 rounded-2xl shadow-xl overflow-hidden border border-zinc-200">
+                <ResumeSheet
+                  content={originalContent}
+                  includePhoto={false}
+                  avatar={null}
+                  isOriginal={true}
+                  highlightChanges={false}
+                />
+              </div>
+            </div>
+
+            {/* Right: Corrected Sheet (Print Target) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-2 print:hidden">
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                  Corrected Resume (AI Polished)
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge variant="success" size="sm">
+                    {appliedCorrectionsCount} changes accepted
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1"
+                  >
+                    <Download className="w-3.5 h-3.5" /> PDF
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white text-zinc-900 rounded-2xl shadow-xl overflow-hidden border border-zinc-200">
+                <ResumeSheet
+                  id="resume-printable-sheet"
+                  content={content}
+                  includePhoto={includePhoto}
+                  avatar={avatar}
+                  isOriginal={false}
+                  highlightChanges={highlightChanges}
+                  corrections={corrections}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Single Resume Sheet (Corrected or Original) */
+        <div className="flex justify-center overflow-x-auto py-2">
+          <div className="w-full max-w-[850px] bg-white text-zinc-900 shadow-2xl rounded-2xl overflow-hidden border border-zinc-200">
+            <ResumeSheet
+              id="resume-printable-sheet"
+              content={viewMode === 'original' ? originalContent : content}
+              includePhoto={viewMode === 'original' ? false : includePhoto}
+              avatar={viewMode === 'original' ? null : avatar}
+              isOriginal={viewMode === 'original'}
+              highlightChanges={viewMode === 'corrected' && highlightChanges}
+              corrections={corrections}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ----------------------------------------------------
-// Standard Single-Column Layout (Used by Minimal, Classic, Technical, ATS, Academic, Serif)
-// ----------------------------------------------------
-function StandardSingleColumnLayout({
-  content,
-  template,
-  avatar,
-}: {
+// ============================================================================
+// Single-Column Clean ATS Resume Document Sheet
+// Pure selectable HTML text, standard fonts, consistent spacing, ATS headers
+// ============================================================================
+interface ResumeSheetProps {
+  id?: string;
   content: ResumeStructuredContent;
-  template: ResumeTemplateMeta;
+  includePhoto: boolean;
   avatar: string | null;
-}) {
-  const isClassic = template.id === 'classic-professional';
-  const isATS = template.id === 'ats-optimized-simple';
+  isOriginal: boolean;
+  highlightChanges?: boolean;
+  corrections?: GrammarCorrection[];
+}
+
+function ResumeSheet({
+  id,
+  content,
+  includePhoto,
+  avatar,
+  isOriginal: _isOriginal,
+  highlightChanges = false,
+  corrections = [],
+}: ResumeSheetProps) {
+  const appliedPhrases = highlightChanges
+    ? corrections.filter((c) => c.applied).map((c) => c.suggestedHighlight)
+    : [];
+
+  const renderBulletText = (bullet: string) => {
+    if (!highlightChanges || appliedPhrases.length === 0) {
+      return <span>{bullet}</span>;
+    }
+
+    const matched = appliedPhrases.find((phrase) => phrase && bullet.includes(phrase));
+    if (!matched) {
+      return <span>{bullet}</span>;
+    }
+
+    const parts = bullet.split(matched);
+    return (
+      <span>
+        {parts[0]}
+        <span className="bg-teal-100 text-teal-900 font-medium px-1 rounded border-b border-teal-400">
+          {matched}
+        </span>
+        {parts.slice(1).join(matched)}
+      </span>
+    );
+  };
 
   return (
-    <div className="space-y-6 text-zinc-900 leading-normal text-[13px]">
-      {/* Header */}
-      <header
-        className={`pb-4 border-b ${
-          isClassic ? 'text-center border-zinc-400 pb-5' : 'border-zinc-200'
-        }`}
-      >
-        <div
-          className={`flex ${
-            isClassic ? 'flex-col items-center' : 'justify-between items-start'
-          } gap-4`}
-        >
-          <div>
-            <h1
-              className={`text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950 ${
-                isClassic ? 'uppercase tracking-widest' : ''
-              }`}
-            >
-              {content.name || 'Your Name'}
+    <div
+      id={id}
+      className="w-full p-8 sm:p-10 font-sans text-zinc-900 bg-white leading-normal selection:bg-blue-100"
+      style={{
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      }}
+    >
+      {/* Header Section */}
+      <div className="border-b-2 border-zinc-800 pb-4 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1 flex-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 uppercase">
+              {content.name || 'Candidate Name'}
             </h1>
-            <p
-              className={`text-sm font-semibold mt-1`}
-              style={{ color: template.accentColor }}
-            >
-              {content.title || 'Your Professional Title'}
-            </p>
+            {content.title && (
+              <p className="text-sm sm:text-base font-semibold text-zinc-700">
+                {content.title}
+              </p>
+            )}
+
+            {/* Single-line ATS readable contact row */}
+            <div className="flex flex-wrap items-center gap-y-1 gap-x-2 text-xs text-zinc-600 pt-1">
+              {content.email && (
+                <span className="flex items-center gap-1">
+                  <Mail className="w-3 h-3 text-zinc-400 print:hidden" />
+                  <a href={`mailto:${content.email}`} className="text-zinc-700 hover:underline">
+                    {content.email}
+                  </a>
+                </span>
+              )}
+
+              {content.phone && (
+                <>
+                  <span className="text-zinc-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-zinc-400 print:hidden" />
+                    <span>{content.phone}</span>
+                  </span>
+                </>
+              )}
+
+              {content.location && (
+                <>
+                  <span className="text-zinc-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-zinc-400 print:hidden" />
+                    <span>{content.location}</span>
+                  </span>
+                </>
+              )}
+
+              {content.linkedin && (
+                <>
+                  <span className="text-zinc-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <Linkedin className="w-3 h-3 text-zinc-400 print:hidden" />
+                    <span>{content.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  </span>
+                </>
+              )}
+
+              {content.github && (
+                <>
+                  <span className="text-zinc-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <Github className="w-3 h-3 text-zinc-400 print:hidden" />
+                    <span>{content.github.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  </span>
+                </>
+              )}
+
+              {content.portfolio && (
+                <>
+                  <span className="text-zinc-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <Globe className="w-3 h-3 text-zinc-400 print:hidden" />
+                    <span>{content.portfolio.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
-          {avatar && template.supportsPhoto && (
-            <img
-              src={avatar}
-              alt={content.name || 'Profile'}
-              className="w-16 h-16 rounded-full object-cover border-2 border-zinc-200 shadow-sm"
-            />
+          {/* Optional Profile Photo in small circular frame */}
+          {includePhoto && avatar && (
+            <div className="shrink-0 flex flex-col items-center">
+              <img
+                src={avatar}
+                alt={content.name || 'Profile photo'}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-zinc-300 shadow-sm"
+              />
+            </div>
           )}
         </div>
-
-        {/* Contact Links */}
-        <div
-          className={`flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-zinc-600 mt-3 ${
-            isClassic ? 'justify-center' : ''
-          }`}
-        >
-          {content.email && (
-            <span className="inline-flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5 text-zinc-400" />
-              {content.email}
-            </span>
-          )}
-          {content.phone && (
-            <span className="inline-flex items-center gap-1">
-              <Phone className="w-3.5 h-3.5 text-zinc-400" />
-              {content.phone}
-            </span>
-          )}
-          {content.location && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-zinc-400" />
-              {content.location}
-            </span>
-          )}
-          {content.linkedin && (
-            <span className="inline-flex items-center gap-1 font-medium text-blue-600">
-              <Linkedin className="w-3.5 h-3.5" />
-              {content.linkedin}
-            </span>
-          )}
-          {content.github && (
-            <span className="inline-flex items-center gap-1 font-medium text-zinc-800">
-              <Github className="w-3.5 h-3.5" />
-              {content.github}
-            </span>
-          )}
-        </div>
-      </header>
+      </div>
 
       {/* Professional Summary */}
-      {content.summary ? (
-        <section>
-          <h2
-            className={`text-xs font-bold uppercase tracking-wider mb-2 ${
-              isATS ? 'border-b border-zinc-300 pb-1 text-zinc-900' : ''
-            }`}
-            style={{ color: isATS ? undefined : template.accentColor }}
-          >
+      {content.summary && (
+        <section className="mb-4 break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-1.5">
             Professional Summary
           </h2>
-          <p className="text-zinc-700 leading-relaxed text-justify">{content.summary}</p>
+          <p className="text-xs text-zinc-700 leading-relaxed text-justify">
+            {renderBulletText(content.summary)}
+          </p>
         </section>
-      ) : null}
+      )}
 
       {/* Work Experience */}
-      <section>
-        <h2
-          className={`text-xs font-bold uppercase tracking-wider mb-3 ${
-            isATS ? 'border-b border-zinc-300 pb-1 text-zinc-900' : ''
-          }`}
-          style={{ color: isATS ? undefined : template.accentColor }}
-        >
-          Experience
-        </h2>
-        {content.experience.length > 0 ? (
-          <div className="space-y-4">
+      {content.experience && content.experience.length > 0 && (
+        <section className="mb-4">
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-2">
+            Work Experience
+          </h2>
+          <div className="space-y-3">
             {content.experience.map((exp) => (
-              <div key={exp.id} className="space-y-1">
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between text-xs">
-                  <div className="font-bold text-zinc-950 text-sm">
-                    {exp.role} <span className="font-normal text-zinc-600">| {exp.company}</span>
+              <div
+                key={exp.id}
+                className="space-y-1 break-inside-avoid"
+                style={{ pageBreakInside: 'avoid' }}
+              >
+                <div className="flex items-baseline justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-zinc-900">{exp.role}</span>
+                    <span className="text-zinc-600 font-medium"> — {exp.company}</span>
+                    {exp.location && (
+                      <span className="text-zinc-500 font-normal">, {exp.location}</span>
+                    )}
                   </div>
-                  <div className="text-zinc-500 font-medium sm:text-right">
-                    {exp.period} • {exp.location}
-                  </div>
+                  <span className="text-xs text-zinc-600 font-medium tabular-nums shrink-0">
+                    {exp.period}
+                  </span>
                 </div>
-                <ul className="list-disc list-outside pl-4 space-y-1 text-zinc-700 text-xs mt-1 leading-relaxed">
-                  {exp.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
+
+                {exp.bullets && exp.bullets.length > 0 && (
+                  <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-1 leading-snug">
+                    {exp.bullets.map((bullet, idx) => (
+                      <li key={idx}>{renderBulletText(bullet)}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your work experience
+        </section>
+      )}
+
+      {/* Internships (Preserving user's original section structure) */}
+      {content.internships && content.internships.length > 0 && (
+        <section className="mb-4">
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-2">
+            Internships
+          </h2>
+          <div className="space-y-3">
+            {content.internships.map((intern) => (
+              <div
+                key={intern.id}
+                className="space-y-1 break-inside-avoid"
+                style={{ pageBreakInside: 'avoid' }}
+              >
+                <div className="flex items-baseline justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-zinc-900">{intern.role}</span>
+                    <span className="text-zinc-600 font-medium"> — {intern.company}</span>
+                    {intern.location && (
+                      <span className="text-zinc-500 font-normal">, {intern.location}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-zinc-600 font-medium tabular-nums shrink-0">
+                    {intern.period}
+                  </span>
+                </div>
+
+                {intern.bullets && intern.bullets.length > 0 && (
+                  <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-1 leading-snug">
+                    {intern.bullets.map((bullet, idx) => (
+                      <li key={idx}>{renderBulletText(bullet)}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Projects */}
-      <section>
-        <h2
-          className={`text-xs font-bold uppercase tracking-wider mb-3 ${
-            isATS ? 'border-b border-zinc-300 pb-1 text-zinc-900' : ''
-          }`}
-          style={{ color: isATS ? undefined : template.accentColor }}
-        >
-          Projects
-        </h2>
-        {content.projects.length > 0 ? (
+      {content.projects && content.projects.length > 0 && (
+        <section className="mb-4">
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-2">
+            Technical Projects
+          </h2>
           <div className="space-y-3">
             {content.projects.map((proj) => (
-              <div key={proj.id} className="space-y-1">
-                <div className="flex flex-col sm:flex-row sm:items-baseline justify-between text-xs">
-                  <div className="font-bold text-zinc-950 text-sm flex items-center gap-2">
-                    <span>{proj.title}</span>
-                    {proj.link && (
-                      <span className="text-[11px] font-normal text-blue-600 underline">
-                        ({proj.link})
+              <div
+                key={proj.id}
+                className="space-y-1 break-inside-avoid"
+                style={{ pageBreakInside: 'avoid' }}
+              >
+                <div className="flex items-baseline justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-zinc-900">{proj.title}</span>
+                    {proj.technologies && proj.technologies.length > 0 && (
+                      <span className="text-zinc-600 italic">
+                        {' '}
+                        | {proj.technologies.join(', ')}
                       </span>
                     )}
                   </div>
+                  {proj.link && (
+                    <span className="text-[11px] text-zinc-500 truncate max-w-[200px]">
+                      {proj.link.replace(/^https?:\/\//, '')}
+                    </span>
+                  )}
                 </div>
-                {proj.technologies && proj.technologies.length > 0 && (
-                  <div className="text-[11px] font-medium text-zinc-500">
-                    <span className="font-semibold text-zinc-700">Technologies:</span>{' '}
-                    {proj.technologies.join(', ')}
-                  </div>
+
+                {proj.bullets && proj.bullets.length > 0 && (
+                  <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-1 leading-snug">
+                    {proj.bullets.map((bullet, idx) => (
+                      <li key={idx}>{renderBulletText(bullet)}</li>
+                    ))}
+                  </ul>
                 )}
-                <ul className="list-disc list-outside pl-4 space-y-0.5 text-zinc-700 text-xs mt-1 leading-relaxed">
-                  {proj.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your projects
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Skills */}
-      <section>
-        <h2
-          className={`text-xs font-bold uppercase tracking-wider mb-2 ${
-            isATS ? 'border-b border-zinc-300 pb-1 text-zinc-900' : ''
-          }`}
-          style={{ color: isATS ? undefined : template.accentColor }}
-        >
-          Technical Skills
-        </h2>
-        {content.skills && (content.skills.languages?.length > 0 || content.skills.frameworks?.length > 0 || content.skills.databases?.length > 0 || content.skills.tools?.length > 0) ? (
-          <div className="space-y-1 text-xs text-zinc-800">
-            {content.skills.languages?.length > 0 && (
-              <p>
-                <span className="font-bold text-zinc-900">Languages:</span>{' '}
+      {/* Technical Skills - Single column clean layout */}
+      {content.skills && (
+        <section className="mb-4 break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-1.5">
+            Technical Skills
+          </h2>
+          <div className="text-xs text-zinc-700 space-y-1 leading-relaxed">
+            {content.skills.languages && content.skills.languages.length > 0 && (
+              <div>
+                <strong className="text-zinc-900">Languages:</strong>{' '}
                 {content.skills.languages.join(', ')}
-              </p>
+              </div>
             )}
-            {content.skills.frameworks?.length > 0 && (
-              <p>
-                <span className="font-bold text-zinc-900">Frameworks:</span>{' '}
+            {content.skills.frameworks && content.skills.frameworks.length > 0 && (
+              <div>
+                <strong className="text-zinc-900">Frameworks & Libraries:</strong>{' '}
                 {content.skills.frameworks.join(', ')}
-              </p>
+              </div>
             )}
-            {content.skills.databases?.length > 0 && (
-              <p>
-                <span className="font-bold text-zinc-900">Databases:</span>{' '}
+            {content.skills.databases && content.skills.databases.length > 0 && (
+              <div>
+                <strong className="text-zinc-900">Databases:</strong>{' '}
                 {content.skills.databases.join(', ')}
-              </p>
+              </div>
             )}
-            {content.skills.tools?.length > 0 && (
-              <p>
-                <span className="font-bold text-zinc-900">Developer Tools:</span>{' '}
+            {content.skills.tools && content.skills.tools.length > 0 && (
+              <div>
+                <strong className="text-zinc-900">Developer Tools:</strong>{' '}
                 {content.skills.tools.join(', ')}
-              </p>
+              </div>
+            )}
+            {content.skills.softSkills && content.skills.softSkills.length > 0 && (
+              <div>
+                <strong className="text-zinc-900">Competencies:</strong>{' '}
+                {content.skills.softSkills.join(', ')}
+              </div>
             )}
           </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your skills
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Education */}
-      <section>
-        <h2
-          className={`text-xs font-bold uppercase tracking-wider mb-2 ${
-            isATS ? 'border-b border-zinc-300 pb-1 text-zinc-900' : ''
-          }`}
-          style={{ color: isATS ? undefined : template.accentColor }}
-        >
-          Education
-        </h2>
-        {content.education.length > 0 ? (
+      {content.education && content.education.length > 0 && (
+        <section className="mb-4">
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-2">
+            Education
+          </h2>
           <div className="space-y-2">
-            {content.education.map((edu) => (
-              <div key={edu.id} className="text-xs space-y-0.5">
-                <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-zinc-950 text-sm">{edu.institution}</span>
-                  <span className="text-zinc-500">{edu.graduationDate}</span>
+            {content.education.map((ed) => (
+              <div
+                key={ed.id}
+                className="text-xs break-inside-avoid"
+                style={{ pageBreakInside: 'avoid' }}
+              >
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-zinc-900">{ed.degree}</span>
+                  <span className="text-zinc-600 font-medium tabular-nums">
+                    {ed.graduationDate}
+                  </span>
                 </div>
-                <div className="text-zinc-700">
-                  {edu.degree} {edu.gpa ? `— GPA: ${edu.gpa}` : ''}
+                <div className="flex items-baseline justify-between text-zinc-600">
+                  <span>{ed.institution}</span>
+                  {ed.gpa && <span className="text-zinc-500">GPA: {ed.gpa}</span>}
                 </div>
-                {edu.coursework && edu.coursework.length > 0 && (
-                  <p className="text-[11px] text-zinc-500">
-                    <span className="font-semibold text-zinc-700">Coursework:</span>{' '}
-                    {edu.coursework.join(', ')}
+                {ed.coursework && ed.coursework.length > 0 && (
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Coursework: {ed.coursework.join(', ')}
                   </p>
                 )}
               </div>
             ))}
           </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your education
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-// ----------------------------------------------------
-// Two-Column Compact Layout
-// ----------------------------------------------------
-function TwoColumnLayout({
-  content,
-  template,
-  avatar,
-}: {
-  content: ResumeStructuredContent;
-  template: ResumeTemplateMeta;
-  avatar: string | null;
-}) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-8 text-[12px] text-zinc-900">
-      {/* Left Sidebar (4 cols) */}
-      <div className="md:col-span-4 bg-zinc-50/80 -m-8 sm:-m-12 p-8 sm:p-10 border-r border-zinc-200 space-y-6">
-        {avatar && (
-          <div className="flex justify-center">
-            <img
-              src={avatar}
-              alt={content.name}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
-            />
-          </div>
-        )}
-
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-950">{content.name}</h1>
-          <p className="text-xs font-semibold mt-0.5" style={{ color: template.accentColor }}>
-            {content.title}
-          </p>
-        </div>
-
-        {/* Contact Info */}
-        <div className="space-y-2 text-xs text-zinc-700 pt-2 border-t border-zinc-200">
-          <p className="font-bold uppercase tracking-wider text-[10px] text-zinc-400 mb-2">
-            Contact
-          </p>
-          {content.email && <p className="truncate">{content.email}</p>}
-          {content.phone && <p>{content.phone}</p>}
-          {content.location && <p>{content.location}</p>}
-          {content.linkedin && <p className="text-blue-600 truncate">{content.linkedin}</p>}
-          {content.github && <p className="truncate font-mono text-[11px]">{content.github}</p>}
-        </div>
-
-        {/* Skills sidebar */}
-        <div className="space-y-2 pt-2 border-t border-zinc-200">
-          <p className="font-bold uppercase tracking-wider text-[10px] text-zinc-400 mb-2">
-            Skills
-          </p>
-          <div className="space-y-2 text-xs">
-            <div>
-              <span className="font-semibold text-zinc-900 block text-[11px]">Languages</span>
-              <span className="text-zinc-600">{content.skills.languages.join(', ')}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-900 block text-[11px]">Frameworks</span>
-              <span className="text-zinc-600">{content.skills.frameworks.join(', ')}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-900 block text-[11px]">Databases</span>
-              <span className="text-zinc-600">{content.skills.databases.join(', ')}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-900 block text-[11px]">Tools</span>
-              <span className="text-zinc-600">{content.skills.tools.join(', ')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Education sidebar */}
-        <div className="space-y-2 pt-2 border-t border-zinc-200">
-          <p className="font-bold uppercase tracking-wider text-[10px] text-zinc-400 mb-2">
-            Education
-          </p>
-          {content.education.length > 0 ? (
-            content.education.map((edu) => (
-              <div key={edu.id} className="text-xs">
-                <p className="font-bold text-zinc-950">{edu.institution}</p>
-                <p className="text-zinc-700">{edu.degree}</p>
-                <p className="text-[11px] text-zinc-500">
-                  {edu.graduationDate} {edu.gpa ? `• GPA: ${edu.gpa}` : ''}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-[11px] text-zinc-400 italic">Add your education</p>
-          )}
-        </div>
-      </div>
-
-      {/* Right Column (8 cols) */}
-      <div className="md:col-span-8 space-y-6 pt-2">
-        {content.summary ? (
-          <section>
-            <h2
-              className="text-xs font-bold uppercase tracking-wider mb-1.5"
-              style={{ color: template.accentColor }}
-            >
-              Summary
-            </h2>
-            <p className="text-zinc-700 leading-relaxed text-xs">{content.summary}</p>
-          </section>
-        ) : null}
-
-        <section>
-          <h2
-            className="text-xs font-bold uppercase tracking-wider mb-3"
-            style={{ color: template.accentColor }}
-          >
-            Work Experience
-          </h2>
-          {content.experience.length > 0 ? (
-            <div className="space-y-4">
-              {content.experience.map((exp) => (
-                <div key={exp.id} className="space-y-1">
-                  <div className="flex justify-between items-baseline text-xs">
-                    <span className="font-bold text-zinc-950 text-sm">
-                      {exp.role} — <span className="font-normal text-zinc-600">{exp.company}</span>
-                    </span>
-                    <span className="text-zinc-500 text-[11px]">{exp.period}</span>
-                  </div>
-                  <ul className="list-disc list-outside pl-4 space-y-1 text-zinc-700 text-xs mt-1 leading-relaxed">
-                    {exp.bullets.map((b, i) => (
-                      <li key={i}>{b}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-              Add your work experience
-            </div>
-          )}
         </section>
+      )}
 
-        <section>
-          <h2
-            className="text-xs font-bold uppercase tracking-wider mb-3"
-            style={{ color: template.accentColor }}
-          >
-            Featured Projects
+      {/* Certifications (if present) */}
+      {content.certifications && content.certifications.length > 0 && (
+        <section className="mb-3 break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-1.5">
+            Certifications
           </h2>
-          {content.projects.length > 0 ? (
-            <div className="space-y-3">
-              {content.projects.map((proj) => (
-                <div key={proj.id} className="space-y-1">
-                  <div className="flex justify-between items-baseline text-xs">
-                    <span className="font-bold text-zinc-950 text-sm">{proj.title}</span>
-                    {proj.link && <span className="text-[11px] text-blue-600">{proj.link}</span>}
-                  </div>
-                  <ul className="list-disc list-outside pl-4 space-y-0.5 text-zinc-700 text-xs leading-relaxed">
-                    {proj.bullets.map((b, i) => (
-                      <li key={i}>{b}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-              Add your projects
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-// ----------------------------------------------------
-// Accent Header Layout (Creative Bold & Startup)
-// ----------------------------------------------------
-function AccentHeaderLayout({
-  content,
-  template,
-  avatar,
-}: {
-  content: ResumeStructuredContent;
-  template: ResumeTemplateMeta;
-  avatar: string | null;
-}) {
-  return (
-    <div className="space-y-6 text-[13px] text-zinc-900">
-      {/* Top Banner */}
-      <div
-        className="-m-8 sm:-m-12 p-8 sm:p-10 text-white rounded-t-xl sm:rounded-t-2xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
-        style={{
-          background: `linear-gradient(135deg, ${template.accentColor}, #09090b)`,
-        }}
-      >
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">{content.name || 'Your Name'}</h1>
-          <p className="text-sm font-medium text-white/90 mt-1">{content.title || 'Your Professional Title'}</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/80 mt-3">
-            {content.email && <span>{content.email}</span>}
-            {content.phone && <span>{content.phone}</span>}
-            {content.location && <span>{content.location}</span>}
-            {content.github && <span>{content.github}</span>}
-          </div>
-        </div>
-
-        {avatar && (
-          <img
-            src={avatar}
-            alt={content.name || 'Profile'}
-            className="w-20 h-20 rounded-full object-cover border-4 border-white/40 shadow-xl"
-          />
-        )}
-      </div>
-
-      {content.summary ? (
-        <section>
-          <h2
-            className="text-xs font-bold uppercase tracking-wider mb-2"
-            style={{ color: template.accentColor }}
-          >
-            About Me
-          </h2>
-          <p className="text-zinc-700 leading-relaxed">{content.summary}</p>
-        </section>
-      ) : null}
-
-      {/* Experience */}
-      <section>
-        <h2
-          className="text-xs font-bold uppercase tracking-wider mb-3"
-          style={{ color: template.accentColor }}
-        >
-          Experience
-        </h2>
-        {content.experience.length > 0 ? (
-          <div className="space-y-4">
-            {content.experience.map((exp) => (
-              <div key={exp.id} className="space-y-1">
-                <div className="flex justify-between items-baseline text-xs">
-                  <span className="font-bold text-zinc-950 text-sm">
-                    {exp.role} <span className="font-normal text-zinc-600">@ {exp.company}</span>
-                  </span>
-                  <span className="text-zinc-500 font-medium">{exp.period}</span>
-                </div>
-                <ul className="list-disc list-outside pl-4 space-y-1 text-zinc-700 text-xs mt-1 leading-relaxed">
-                  {exp.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              </div>
+          <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-0.5">
+            {content.certifications.map((c) => (
+              <li key={c.id}>
+                <span className="font-semibold text-zinc-900">{c.name}</span>
+                {c.issuer && <span className="text-zinc-600"> — {c.issuer}</span>}
+                {c.date && <span className="text-zinc-500"> ({c.date})</span>}
+              </li>
             ))}
-          </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your work experience
-          </div>
-        )}
-      </section>
+          </ul>
+        </section>
+      )}
 
-      {/* Projects */}
-      <section>
-        <h2
-          className="text-xs font-bold uppercase tracking-wider mb-3"
-          style={{ color: template.accentColor }}
-        >
-          Selected Projects
-        </h2>
-        {content.projects.length > 0 ? (
-          <div className="space-y-3">
-            {content.projects.map((proj) => (
-              <div key={proj.id} className="space-y-1">
-                <div className="flex justify-between items-baseline text-xs">
-                  <span className="font-bold text-zinc-950 text-sm">{proj.title}</span>
-                  {proj.link && <span className="text-xs text-blue-600">{proj.link}</span>}
-                </div>
-                <ul className="list-disc list-outside pl-4 space-y-0.5 text-zinc-700 text-xs leading-relaxed">
-                  {proj.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              </div>
+      {/* Achievements / Honors (if present) */}
+      {content.achievements && content.achievements.length > 0 && (
+        <section className="mb-3 break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
+          <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-1.5">
+            Achievements & Honors
+          </h2>
+          <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-0.5">
+            {content.achievements.map((a) => (
+              <li key={a.id}>
+                <span className="font-semibold text-zinc-900">{a.title}</span>
+                {a.description && <span className="text-zinc-600"> — {a.description}</span>}
+                {a.date && <span className="text-zinc-500"> ({a.date})</span>}
+              </li>
             ))}
-          </div>
-        ) : (
-          <div className="p-3 text-xs italic text-zinc-400 border border-dashed border-zinc-200 rounded-lg text-center">
-            Add your projects
-          </div>
-        )}
-      </section>
+          </ul>
+        </section>
+      )}
 
-      {/* Skills Grid */}
-      <section>
-        <h2
-          className="text-xs font-bold uppercase tracking-wider mb-2"
-          style={{ color: template.accentColor }}
-        >
-          Core Technologies
-        </h2>
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            ...content.skills.languages,
-            ...content.skills.frameworks,
-            ...content.skills.databases,
-            ...content.skills.tools,
-          ].map((skill) => (
-            <span
-              key={skill}
-              className="text-xs px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-800 border border-zinc-200 font-medium"
+      {/* Custom Sections from original resume (if present) */}
+      {content.customSections && content.customSections.length > 0 && (
+        <>
+          {content.customSections.map((sec) => (
+            <section
+              key={sec.id}
+              className="mb-3 break-inside-avoid"
+              style={{ pageBreakInside: 'avoid' }}
             >
-              {skill}
-            </span>
+              <h2 className="text-xs font-bold tracking-wider uppercase text-zinc-800 border-b border-zinc-300 pb-0.5 mb-1.5">
+                {sec.title}
+              </h2>
+              <ul className="list-disc list-outside ml-4 text-xs text-zinc-700 space-y-0.5">
+                {sec.content.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </div>
-      </section>
-
-      {/* Education */}
-      <section>
-        <h2
-          className="text-xs font-bold uppercase tracking-wider mb-2"
-          style={{ color: template.accentColor }}
-        >
-          Education
-        </h2>
-        {content.education.map((edu) => (
-          <div key={edu.id} className="text-xs flex justify-between items-baseline">
-            <div>
-              <p className="font-bold text-zinc-950">{edu.institution}</p>
-              <p className="text-zinc-700">{edu.degree}</p>
-            </div>
-            <span className="text-zinc-500">{edu.graduationDate}</span>
-          </div>
-        ))}
-      </section>
+        </>
+      )}
     </div>
   );
 }

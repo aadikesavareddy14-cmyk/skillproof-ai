@@ -15,6 +15,7 @@ export interface StoredResume {
   fileSize: number;
   uploadedAt: string;
   rawText: string;
+  originalContent?: ResumeStructuredContent;
   content: ResumeStructuredContent;
   analysis: ResumeAnalysisData;
   lastModifiedAt: string;
@@ -185,6 +186,7 @@ export const resumeStore = {
         year: 'numeric',
       }),
       rawText,
+      originalContent: JSON.parse(JSON.stringify(structuredContent)),
       content: structuredContent,
       analysis,
       lastModifiedAt: new Date().toISOString(),
@@ -218,7 +220,50 @@ export const resumeStore = {
         year: 'numeric',
       }),
       rawText,
+      originalContent: JSON.parse(JSON.stringify(structuredContent)),
       content: structuredContent,
+      analysis,
+      lastModifiedAt: new Date().toISOString(),
+      history: [],
+    };
+
+    this.saveResume(newResume);
+    return newResume;
+  },
+
+  createManualResume(content: ResumeStructuredContent, title = 'My Created Resume'): StoredResume {
+    const fileName = content.name ? `${content.name.replace(/\s+/g, '_')}_Resume.pdf` : `${title}.pdf`;
+    const virtualSize = 1024 * 16;
+    const rawText = [
+      content.name,
+      content.title,
+      content.summary,
+      ...(content.experience || []).map((e) => `${e.role} ${e.company} ${e.bullets.join(' ')}`),
+      ...(content.internships || []).map((e) => `${e.role} ${e.company} ${e.bullets.join(' ')}`),
+      ...(content.projects || []).map((p) => `${p.title} ${p.bullets.join(' ')}`),
+    ].filter(Boolean).join('\n');
+
+    const analysis = reScoreResume(
+      fileName,
+      virtualSize,
+      null,
+      undefined,
+      content,
+      rawText,
+    );
+
+    const newResume: StoredResume = {
+      id: `resume-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      fileName,
+      fileSize: virtualSize,
+      uploadedAt: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      rawText,
+      originalContent: JSON.parse(JSON.stringify(content)),
+      content,
       analysis,
       lastModifiedAt: new Date().toISOString(),
       history: [],
@@ -278,6 +323,10 @@ export function useResumeStore() {
     return resumeStore.pasteAndParseResume(text, title);
   }, []);
 
+  const createManualResume = useCallback((content: ResumeStructuredContent, title?: string) => {
+    return resumeStore.createManualResume(content, title);
+  }, []);
+
   return {
     resumes,
     selectedResumeId,
@@ -287,5 +336,6 @@ export function useResumeStore() {
     deleteResume,
     uploadAndParse,
     pasteAndParse,
+    createManualResume,
   };
 }

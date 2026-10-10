@@ -17,6 +17,8 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+import { resumeStore } from '@/lib/resumeStore';
+
 interface OnboardingProps {
   onComplete: () => void;
 }
@@ -51,10 +53,21 @@ export function Onboarding({ onComplete }: OnboardingProps) {
   const handleUploadResume = async () => {
     if (!resumeFile) return;
     setResumeUploading(true);
-    await uploadResume(resumeFile.name, resumeFile.size);
-    setResumeUploading(false);
-    setResumeFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    try {
+      const parsedResume = await resumeStore.uploadAndParse(resumeFile);
+      await uploadResume(
+        parsedResume.fileName,
+        parsedResume.fileSize,
+        parsedResume.analysis.overallScore,
+        null,
+      );
+    } catch {
+      await uploadResume(resumeFile.name, resumeFile.size);
+    } finally {
+      setResumeUploading(false);
+      setResumeFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (

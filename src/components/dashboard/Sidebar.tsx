@@ -9,10 +9,19 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { SkillProofLogo, SkillProofCube } from '@/components/SkillProofLogo';
 
-export type DashboardPage = 'overview' | 'profile' | 'jobs' | 'internships' | 'verification' | 'roadmap' | 'settings';
+export type DashboardPage =
+  | 'overview'
+  | 'resume'
+  | 'profile'
+  | 'jobs'
+  | 'internships'
+  | 'verification'
+  | 'roadmap'
+  | 'settings';
 
 interface SidebarProps {
   active: DashboardPage;
@@ -23,6 +32,7 @@ interface SidebarProps {
 
 const navItems: { id: DashboardPage; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'resume', label: 'AI Resume', icon: FileText },
   { id: 'profile', label: 'Skill Profile', icon: User },
   { id: 'jobs', label: 'Jobs', icon: Briefcase },
   { id: 'internships', label: 'Internships', icon: GraduationCap },

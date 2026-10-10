@@ -76,6 +76,7 @@ export interface GrammarCorrection {
   suggestedHighlight: string;
   reason: string;
   applied: boolean;
+  rejected?: boolean;
   sectionContext?: string;
 }
 
@@ -105,6 +106,39 @@ export interface ResumeEducationEntry {
   coursework?: string[];
 }
 
+export interface ResumeCertificationEntry {
+  id: string;
+  name: string;
+  issuer?: string;
+  date?: string;
+  link?: string;
+}
+
+export interface ResumeAchievementEntry {
+  id: string;
+  title: string;
+  description?: string;
+  date?: string;
+}
+
+export interface ResumeCourseEntry {
+  id: string;
+  name: string;
+  institution?: string;
+}
+
+export interface ResumeLanguageEntry {
+  id: string;
+  language: string;
+  proficiency?: string;
+}
+
+export interface ResumeCustomSection {
+  id: string;
+  title: string;
+  content: string[];
+}
+
 export interface ResumeStructuredContent {
   name: string;
   title: string;
@@ -116,14 +150,22 @@ export interface ResumeStructuredContent {
   portfolio?: string;
   summary: string;
   experience: ResumeExperienceEntry[];
+  internships?: ResumeExperienceEntry[];
   projects: ResumeProjectEntry[];
   skills: {
     languages: string[];
     frameworks: string[];
     databases: string[];
     tools: string[];
+    softSkills?: string[];
   };
   education: ResumeEducationEntry[];
+  certifications?: ResumeCertificationEntry[];
+  achievements?: ResumeAchievementEntry[];
+  courses?: ResumeCourseEntry[];
+  spokenLanguages?: ResumeLanguageEntry[];
+  hobbies?: string[];
+  customSections?: ResumeCustomSection[];
 }
 
 export interface ResumeScoreFactor {
@@ -192,14 +234,22 @@ export const emptyStructuredContent: ResumeStructuredContent = {
   portfolio: '',
   summary: '',
   experience: [],
+  internships: [],
   projects: [],
   skills: {
     languages: [],
     frameworks: [],
     databases: [],
     tools: [],
+    softSkills: [],
   },
   education: [],
+  certifications: [],
+  achievements: [],
+  courses: [],
+  spokenLanguages: [],
+  hobbies: [],
+  customSections: [],
 };
 
 // Aliased for backwards compatibility

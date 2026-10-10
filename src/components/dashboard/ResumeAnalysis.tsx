@@ -12,7 +12,6 @@ import {
   Sparkles,
   Layers,
   FileCheck,
-  Palette,
   Camera,
   Download,
   Maximize2,
@@ -30,17 +29,15 @@ import {
   type ResumeStructuredContent,
   type GrammarCorrection,
 } from '@/lib/resumeData';
-import { RESUME_TEMPLATES, type ResumeTemplateMeta } from '@/lib/resumeTemplatesData';
 import { useResumeStore } from '@/lib/resumeStore';
 import { GrammarCorrections } from './GrammarCorrections';
 import { ProfilePhotoUploader } from './ProfilePhotoUploader';
-import { TemplateGallery } from './TemplateGallery';
 import { ResumeLivePreview } from './ResumeLivePreview';
 import { ResumeAiModifierModal } from './ResumeAiModifierModal';
 import { ResumePasteModal } from './ResumePasteModal';
 import type { ModifyResumeResult } from '@/lib/resumeAiModifier';
 
-type FlowStage = 'rubric' | 'grammar' | 'photo' | 'templates' | 'preview';
+type FlowStage = 'rubric' | 'grammar' | 'photo' | 'preview';
 
 const ACCEPTED_TYPES = ['.pdf', '.doc', '.docx', '.txt'];
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -71,11 +68,6 @@ export function ResumeAnalysis() {
 
   // Active stage in the guided lifecycle
   const [activeStage, setActiveStage] = useState<FlowStage>('rubric');
-
-  // Selected template
-  const [selectedTemplate, setSelectedTemplate] = useState<ResumeTemplateMeta>(
-    () => RESUME_TEMPLATES[0],
-  );
 
   // UI accordion expand states
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -374,15 +366,14 @@ export function ResumeAnalysis() {
           {
             id: 'grammar',
             label: `2. Grammar Corrections (${
-              grammarCorrections.filter((c) => !c.applied).length > 0
-                ? `${grammarCorrections.filter((c) => !c.applied).length} pending`
-                : 'Clean'
+              grammarCorrections.filter((c) => !c.applied && !c.rejected).length > 0
+                ? `${grammarCorrections.filter((c) => !c.applied && !c.rejected).length} pending`
+                : 'Reviewed'
             })`,
             icon: FileCheck,
           },
           { id: 'photo', label: '3. Profile Photo (Optional)', icon: Camera },
-          { id: 'templates', label: '4. Choose Template (10 Styles)', icon: Palette },
-          { id: 'preview', label: '5. Preview & Download PDF', icon: Download },
+          { id: 'preview', label: '4. Preview & Download PDF', icon: Download },
         ].map((tab) => {
           const isActive = activeStage === tab.id;
           return (
@@ -845,7 +836,8 @@ export function ResumeAnalysis() {
           corrections={grammarCorrections}
           structuredContent={structuredContent}
           onContentChange={handleGrammarContentChange}
-          onProceedToTemplates={() => setActiveStage('photo')}
+          onProceedToPhoto={() => setActiveStage('photo')}
+          onProceedToPreview={() => setActiveStage('preview')}
         />
       )}
 
@@ -861,8 +853,7 @@ export function ResumeAnalysis() {
             <div>
               <h3 className="text-lg font-bold text-zinc-100">Add a Profile Photo</h3>
               <p className="text-xs text-zinc-400 mt-1">
-                Optional step. Many modern engineering and creative templates include a circular
-                avatar photo. Upload and position your photo below.
+                Optional step. If added, your photo will appear in a small circular frame at the top of your resume. You can toggle it on or off in the preview.
               </p>
             </div>
           </div>
@@ -881,38 +872,28 @@ export function ResumeAnalysis() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveStage('templates')}
+              onClick={() => setActiveStage('preview')}
               className="press-scale flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all"
             >
-              Continue to Template Gallery <ArrowRight className="w-3.5 h-3.5" />
+              Preview Corrected Resume <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </Card>
       )}
 
       {/* ========================================================================= */}
-      {/* STAGE 4: RESUME TEMPLATE GALLERY                                          */}
-      {/* ========================================================================= */}
-      {activeStage === 'templates' && (
-        <TemplateGallery
-          selectedTemplateId={selectedTemplate.id}
-          onSelectTemplate={setSelectedTemplate}
-          onContinueToPreview={(tpl) => {
-            setSelectedTemplate(tpl);
-            setActiveStage('preview');
-          }}
-        />
-      )}
-
-      {/* ========================================================================= */}
-      {/* STAGE 5: LIVE RESUME PREVIEW & PDF DOWNLOAD                               */}
+      {/* STAGE 4: LIVE RESUME PREVIEW & PDF DOWNLOAD                               */}
       {/* ========================================================================= */}
       {activeStage === 'preview' && (
         <ResumeLivePreview
-          template={selectedTemplate}
           content={structuredContent}
-          onBackToGallery={() => setActiveStage('templates')}
+          originalContent={activeResume.originalContent || activeResume.content}
+          rawText={activeResume.rawText}
+          fileName={activeResume.fileName}
+          onBackToGrammar={() => setActiveStage('grammar')}
           onModifyWithAi={() => setModifierOpen(true)}
+          appliedCorrectionsCount={grammarCorrections.filter((c) => c.applied).length}
+          corrections={grammarCorrections}
         />
       )}
 

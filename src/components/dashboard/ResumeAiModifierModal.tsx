@@ -39,10 +39,10 @@ export function ResumeAiModifierModal({
   if (!open) return null;
 
   const quickPrompts = [
-    { label: 'Rewrite summary with metrics', section: 'summary' as TargetSection, prompt: 'Change my summary to highlight scalable cloud engineering and 3+ years of experience with concrete metrics.' },
-    { label: 'Quantify experience bullets', section: 'experience' as TargetSection, prompt: 'Quantify bullet points in my work experience with percentages, latency reductions, and strong action verbs.' },
-    { label: 'Add modern skills', section: 'skills' as TargetSection, prompt: 'Add skills: Docker, Kubernetes, GraphQL, and AWS to my technical skills.' },
-    { label: 'Add a new project', section: 'projects' as TargetSection, prompt: 'Add this project: Distributed Log Pipeline — Go, Kafka, Docker — Processed 50k events/sec with automated failover.' },
+    { label: 'Polish career summary', section: 'summary' as TargetSection, prompt: 'Refine my summary with concise, professional executive wording while preserving my exact background.' },
+    { label: 'Strengthen action verbs', section: 'experience' as TargetSection, prompt: 'Replace passive phrases with strong action verbs (e.g. Engineered, Spearheaded, Architected) in my work experience.' },
+    { label: 'Standardize technical skills', section: 'skills' as TargetSection, prompt: 'Standardize technical skill casing and formatting to match industry ATS conventions.' },
+    { label: 'Refine project descriptions', section: 'projects' as TargetSection, prompt: 'Enhance project achievement phrasing focusing on architecture and modular engineering.' },
   ];
 
   const handleGenerate = async () => {

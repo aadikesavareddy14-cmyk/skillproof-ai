@@ -259,7 +259,7 @@ export function applySingleCorrection(
   }
 
   // Check experience bullets
-  for (const exp of updated.experience) {
+  for (const exp of updated.experience || []) {
     for (let i = 0; i < exp.bullets.length; i++) {
       if (exp.bullets[i].includes(correction.originalHighlight)) {
         exp.bullets[i] = exp.bullets[i].replace(
@@ -271,8 +271,21 @@ export function applySingleCorrection(
     }
   }
 
+  // Check internship bullets
+  for (const intern of updated.internships || []) {
+    for (let i = 0; i < intern.bullets.length; i++) {
+      if (intern.bullets[i].includes(correction.originalHighlight)) {
+        intern.bullets[i] = intern.bullets[i].replace(
+          correction.originalHighlight,
+          correction.suggestedHighlight,
+        );
+        return updated;
+      }
+    }
+  }
+
   // Check project bullets
-  for (const proj of updated.projects) {
+  for (const proj of updated.projects || []) {
     for (let i = 0; i < proj.bullets.length; i++) {
       if (proj.bullets[i].includes(correction.originalHighlight)) {
         proj.bullets[i] = proj.bullets[i].replace(
@@ -304,7 +317,7 @@ export function revertSingleCorrection(
     return updated;
   }
 
-  for (const exp of updated.experience) {
+  for (const exp of updated.experience || []) {
     for (let i = 0; i < exp.bullets.length; i++) {
       if (exp.bullets[i].includes(correction.suggestedHighlight)) {
         exp.bullets[i] = exp.bullets[i].replace(
@@ -316,7 +329,19 @@ export function revertSingleCorrection(
     }
   }
 
-  for (const proj of updated.projects) {
+  for (const intern of updated.internships || []) {
+    for (let i = 0; i < intern.bullets.length; i++) {
+      if (intern.bullets[i].includes(correction.suggestedHighlight)) {
+        intern.bullets[i] = intern.bullets[i].replace(
+          correction.suggestedHighlight,
+          correction.originalHighlight,
+        );
+        return updated;
+      }
+    }
+  }
+
+  for (const proj of updated.projects || []) {
     for (let i = 0; i < proj.bullets.length; i++) {
       if (proj.bullets[i].includes(correction.suggestedHighlight)) {
         proj.bullets[i] = proj.bullets[i].replace(

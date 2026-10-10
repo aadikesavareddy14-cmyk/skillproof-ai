@@ -3,7 +3,7 @@ import { Network, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
 import { Badge } from '@/components/dashboard/Badge';
-import { ResumeAnalysis } from '@/components/dashboard/ResumeAnalysis';
+import { ResumeGeneratorPage } from '@/components/dashboard/pages/ResumeGeneratorPage';
 import { LockedState, AnalyzingState } from '@/components/dashboard/LockedState';
 import { useAuth } from '@/context/AuthContext';
 import { computeScores, type ScoredSkill } from '@/lib/scoringService';
@@ -14,7 +14,7 @@ type Tab = 'skills' | 'resume';
 
 const tabs: { id: Tab; label: string; icon: typeof Network }[] = [
   { id: 'skills', label: 'Verified Skills', icon: Network },
-  { id: 'resume', label: 'Resume Analysis', icon: FileText },
+  { id: 'resume', label: 'AI Resume & Analysis', icon: FileText },
 ];
 
 interface SkillProfilePageProps {
@@ -204,7 +204,7 @@ export function SkillProfilePage({ onNavigate: _onNavigate }: SkillProfilePagePr
           </>
         )}
 
-        {tab === 'resume' && <ResumeAnalysis />}
+        {tab === 'resume' && <ResumeGeneratorPage onNavigate={_onNavigate} />}
       </div>
     </div>
   );

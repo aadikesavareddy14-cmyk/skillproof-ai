@@ -9,6 +9,7 @@ interface TopbarProps {
 
 const pageTitles: Record<DashboardPage, { title: string; subtitle: string }> = {
   overview: { title: 'Overview', subtitle: 'Your verified skill profile at a glance' },
+  resume: { title: 'AI Resume', subtitle: 'AI-corrected resume with 100-point score breakdown and PDF export' },
   profile: { title: 'Skill Profile', subtitle: 'Your verified skills and knowledge graph' },
   jobs: { title: 'Jobs', subtitle: 'Full-time roles matched to your verified skills' },
   internships: { title: 'Internships', subtitle: 'Internship opportunities matched to your skills' },

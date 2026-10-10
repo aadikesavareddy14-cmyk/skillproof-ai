@@ -170,14 +170,8 @@ export async function modifyResumeWithAi(
         b = b.replace(/^Made changes to\s+/i, 'Optimized ');
         b = b.replace(/^Created\s+/i, 'Architected ');
 
-        // Add quantifiable outcomes if requested and not already present
-        if ((lowerInst.includes('quantif') || lowerInst.includes('metric')) && !b.match(/\d+%|\d+k|\d+M|\b(ms|s|hours|days)\b/i)) {
-          if (b.includes('Optimized') || b.includes('database') || b.includes('query')) {
-            b += ', reducing query execution latency by 32%';
-          } else if (b.includes('Architected') || b.includes('Built') || b.includes('Engineered')) {
-            b += ', improving operational throughput and test coverage';
-          }
-        }
+        // Elevate sentence structure without inventing fake numbers or percentages
+        b = b.replace(/\b(basically|essentially|really)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
         return b;
       });
 

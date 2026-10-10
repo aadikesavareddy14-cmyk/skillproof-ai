@@ -126,7 +126,10 @@ export function evaluateResumeRubric(
   let experienceScore = 0;
   const experienceSuggestions: string[] = [];
 
-  const allExpBullets = content.experience.flatMap((e) => e.bullets);
+  const allExpBullets = [
+    ...(content.experience || []),
+    ...(content.internships || []),
+  ].flatMap((e) => e.bullets);
   const totalBullets = allExpBullets.length;
 
   const metricBullets = allExpBullets.filter((b) =>
@@ -249,10 +252,11 @@ export function evaluateResumeRubric(
   const skillsSuggestions: string[] = [];
 
   const allSkillsList = [
-    ...content.skills.languages,
-    ...content.skills.frameworks,
-    ...content.skills.databases,
-    ...content.skills.tools,
+    ...(content.skills?.languages || []),
+    ...(content.skills?.frameworks || []),
+    ...(content.skills?.databases || []),
+    ...(content.skills?.tools || []),
+    ...(content.skills?.softSkills || []),
   ];
 
   const hasCategorization =

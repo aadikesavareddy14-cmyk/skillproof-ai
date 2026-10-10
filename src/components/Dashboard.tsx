@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sidebar, type DashboardPage } from '@/components/dashboard/Sidebar';
 import { Topbar } from '@/components/dashboard/Topbar';
 import { OverviewPage } from '@/components/dashboard/pages/OverviewPage';
+import { ResumeGeneratorPage } from '@/components/dashboard/pages/ResumeGeneratorPage';
 import { SkillProfilePage } from '@/components/dashboard/pages/SkillProfilePage';
 import { JobMatchesPage } from '@/components/dashboard/pages/JobMatchesPage';
 import { InternshipsPage } from '@/components/dashboard/pages/InternshipsPage';
@@ -21,6 +22,8 @@ export function Dashboard({ onSignOut }: DashboardProps) {
     switch (page) {
       case 'overview':
         return <OverviewPage onNavigate={setPage} />;
+      case 'resume':
+        return <ResumeGeneratorPage onNavigate={setPage} />;
       case 'profile':
         return <SkillProfilePage onNavigate={setPage} />;
       case 'jobs':
