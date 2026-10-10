@@ -21,8 +21,8 @@ const sizeClasses: Record<string, string> = {
 
 export function SkillProofLogo({
   size = 'navbar',
-  variant,
-  layout,
+  variant: _variant,
+  layout: _layout,
   animated = false,
   className = '',
   style,

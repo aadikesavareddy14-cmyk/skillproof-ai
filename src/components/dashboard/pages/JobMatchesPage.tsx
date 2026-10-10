@@ -113,7 +113,7 @@ function JobCard({ job }: { job: JobListing }) {
   );
 }
 
-export function JobMatchesPage({ onNavigate }: JobMatchesPageProps) {
+export function JobMatchesPage({ onNavigate: _onNavigate }: JobMatchesPageProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');

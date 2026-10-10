@@ -21,7 +21,7 @@ interface SkillProfilePageProps {
   onNavigate: (page: DashboardPage) => void;
 }
 
-export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
+export function SkillProfilePage({ onNavigate: _onNavigate }: SkillProfilePageProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('skills');
@@ -210,7 +210,7 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
   );
 }
 
-function SkillCard({ skill, index }: { skill: ScoredSkill; index: number }) {
+function SkillCard({ skill, index: _index }: { skill: ScoredSkill; index: number }) {
   const isListedOnly = skill.supportLevel === 'listed-only';
 
   return (

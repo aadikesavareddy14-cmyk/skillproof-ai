@@ -121,7 +121,7 @@ function InternshipCard({ internship }: { internship: InternshipListing }) {
   );
 }
 
-export function InternshipsPage({ onNavigate }: InternshipsPageProps) {
+export function InternshipsPage({ onNavigate: _onNavigate }: InternshipsPageProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');

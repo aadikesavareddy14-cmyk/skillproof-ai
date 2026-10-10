@@ -19,6 +19,7 @@ import { Badge } from '@/components/dashboard/Badge';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import type { OAuthProvider } from '@/lib/authErrors';
+import { ProfilePhotoUploader } from '@/components/dashboard/ProfilePhotoUploader';
 
 interface SettingsPageProps {
   onSignOut: () => void;
@@ -221,24 +222,16 @@ export function SettingsPage({ onSignOut }: SettingsPageProps) {
           </div>
         </div>
 
-        {/* Profile Card Summary */}
-        <div className="flex items-center gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 mb-6">
-          {profile.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt={profile.name ?? 'Profile'}
-              className="w-12 h-12 rounded-full border border-zinc-700 object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-teal-600 flex items-center justify-center text-sm font-semibold text-white">
-              {(profile.name ?? profile.email ?? 'SP').slice(0, 2).toUpperCase()}
+        {/* Profile Photo & Summary */}
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <ProfilePhotoUploader size="lg" showDetails={true} />
+            <div className="text-left sm:text-right text-xs text-zinc-500 border-t sm:border-t-0 border-zinc-800/80 pt-3 sm:pt-0">
+              <span className="block text-zinc-300 font-medium text-sm truncate max-w-[200px]">
+                {profile.name ?? 'No name set'}
+              </span>
+              <span className="block text-zinc-500 truncate max-w-[200px]">{profile.email}</span>
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-zinc-100 truncate">
-              {profile.name ?? 'No name set'}
-            </p>
-            <p className="text-xs text-zinc-500 truncate">{profile.email}</p>
           </div>
         </div>
 

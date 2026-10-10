@@ -12,7 +12,7 @@ interface RoadmapPageProps {
   onNavigate: (page: DashboardPage) => void;
 }
 
-export function RoadmapPage({ onNavigate }: RoadmapPageProps) {
+export function RoadmapPage({ onNavigate: _onNavigate }: RoadmapPageProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
 

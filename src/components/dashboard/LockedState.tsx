@@ -4,6 +4,7 @@ import { Card } from '@/components/dashboard/Card';
 import { ResumeUploadModal } from '@/components/dashboard/ResumeUploadModal';
 import { useAuth } from '@/context/AuthContext';
 import { SkillProofLogo } from '@/components/SkillProofLogo';
+import { resumeStore } from '@/lib/resumeStore';
 
 interface LockedStateProps {
   resumeUploaded: boolean;
@@ -19,8 +20,18 @@ export function LockedState({
   const { uploadResume } = useAuth();
   const [resumeModalOpen, setResumeModalOpen] = useState(false);
 
-  const handleResumeConfirm = (file: File) => {
-    uploadResume(file.name, file.size);
+  const handleResumeConfirm = async (file: File) => {
+    try {
+      const parsedResume = await resumeStore.uploadAndParse(file);
+      await uploadResume(
+        parsedResume.fileName,
+        parsedResume.fileSize,
+        parsedResume.analysis.overallScore,
+        null,
+      );
+    } catch {
+      uploadResume(file.name, file.size);
+    }
     setResumeModalOpen(false);
   };
 
