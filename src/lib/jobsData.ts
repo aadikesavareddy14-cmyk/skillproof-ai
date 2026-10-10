@@ -4,7 +4,7 @@ export interface JobListing {
   company: string;
   location: string;
   remote: boolean;
-  source: 'RemoteOK' | 'Adzuna' | 'GitHub Jobs' | 'Himalayas' | 'Wellfound';
+  source: 'RemoteOK' | 'Adzuna' | 'Dice' | 'Himalayas' | 'Wellfound';
   sourceUrl: string;
   fitScore: number;
   matchType: 'strong' | 'moderate' | 'weak';

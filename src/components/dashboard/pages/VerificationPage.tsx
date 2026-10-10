@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Github, FileText, FolderOpen, Brain, CheckCircle2 } from 'lucide-react';
+import { FileText, FolderOpen, Brain, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
 import { Badge } from '@/components/dashboard/Badge';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { evidenceSources, verificationBreakdown, overallConfidence } from '@/lib/mockData';
 
-const sourceIcons: Record<string, typeof Github> = {
-  github: Github,
+const sourceIcons: Record<string, typeof FileText> = {
   file: FileText,
   folder: FolderOpen,
   brain: Brain,
@@ -24,8 +23,8 @@ export function VerificationPage() {
   if (loading) {
     return (
       <div className="space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
         <CardSkeleton />
       </div>
@@ -37,7 +36,7 @@ export function VerificationPage() {
       {/* Evidence sources */}
       <div>
         <h3 className="text-base font-semibold text-zinc-200 mb-4">Evidence Sources</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           {evidenceSources.map((source) => {
             const Icon = sourceIcons[source.icon] ?? FileText;
             return (
@@ -85,10 +84,10 @@ export function VerificationPage() {
             {verificationBreakdown.map((item) => (
               <div key={item.skill} className="flex items-center gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900/30">
                 <span className="text-sm font-medium text-zinc-200 w-28 shrink-0">{item.skill}</span>
-                <div className="flex-1 flex items-center gap-3">
-                  {item.github > 0 && (
-                    <span className="flex items-center gap-1 text-xs text-zinc-500">
-                      <Github className="w-3.5 h-3.5" /> {item.github} repos
+                <div className="flex-1 flex items-center gap-3 flex-wrap">
+                  {item.resumeMentions > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-zinc-400">
+                      <FileText className="w-3.5 h-3.5 text-teal-400" /> {item.resumeMentions} resume citations
                     </span>
                   )}
                   {item.projects > 0 && (
@@ -101,11 +100,6 @@ export function VerificationPage() {
                       <Brain className="w-3.5 h-3.5" /> {item.assessment}%
                     </span>
                   )}
-                  {item.resume && (
-                    <span className="flex items-center gap-1 text-xs text-zinc-500">
-                      <FileText className="w-3.5 h-3.5" /> Resume
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="w-20 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
@@ -115,10 +109,7 @@ export function VerificationPage() {
                         : item.confidence >= 70 ? 'bg-gradient-to-r from-amber-500 to-blue-500'
                         : 'bg-gradient-to-r from-red-500 to-amber-500'
                       }`}
-                      style={{ width: '0%' }}
-                      ref={(el) => {
-                        if (el) setTimeout(() => { el.style.width = `${item.confidence}%`; }, 100);
-                      }}
+                      style={{ width: `${item.confidence}%` }}
                     />
                   </div>
                   <span className="text-sm font-semibold tabular-nums text-zinc-300 w-10 text-right">

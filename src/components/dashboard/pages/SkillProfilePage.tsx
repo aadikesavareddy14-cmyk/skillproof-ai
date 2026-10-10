@@ -1,21 +1,19 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Network, Github, FileText, TrendingUp } from 'lucide-react';
+import { Network, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
 import { Badge } from '@/components/dashboard/Badge';
-import { GitHubInsights } from '@/components/dashboard/GitHubInsights';
 import { ResumeAnalysis } from '@/components/dashboard/ResumeAnalysis';
 import { LockedState, AnalyzingState } from '@/components/dashboard/LockedState';
 import { useAuth } from '@/context/AuthContext';
-import { computeScores, type ScoredSkill, type SkillBenchmark } from '@/lib/scoringService';
+import { computeScores, type ScoredSkill } from '@/lib/scoringService';
 import { skillGraph } from '@/lib/mockData';
 import type { DashboardPage } from '@/components/dashboard/Sidebar';
 
-type Tab = 'skills' | 'github' | 'resume';
+type Tab = 'skills' | 'resume';
 
 const tabs: { id: Tab; label: string; icon: typeof Network }[] = [
   { id: 'skills', label: 'Verified Skills', icon: Network },
-  { id: 'github', label: 'GitHub Insights', icon: Github },
   { id: 'resume', label: 'Resume Analysis', icon: FileText },
 ];
 
@@ -30,12 +28,7 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [scoresReady, setScoresReady] = useState(false);
 
-  const ctx = useMemo(
-    () => ({ resumeUploaded: profile.resumeUploaded, githubConnected: profile.githubConnected }),
-    [profile.resumeUploaded, profile.githubConnected],
-  );
-
-  const bothConnected = ctx.resumeUploaded && ctx.githubConnected;
+  const isUnlocked = profile.resumeUploaded;
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
@@ -43,21 +36,29 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
   }, []);
 
   useEffect(() => {
-    if (bothConnected && !scoresReady) {
+    if (isUnlocked && !scoresReady) {
       setAnalyzing(true);
       const timer = setTimeout(() => {
         setAnalyzing(false);
         setScoresReady(true);
-      }, 2500);
+      }, 1500);
       return () => clearTimeout(timer);
     }
-    if (!bothConnected) {
+    if (!isUnlocked) {
       setScoresReady(false);
       setAnalyzing(false);
     }
-  }, [bothConnected, scoresReady]);
+  }, [isUnlocked, scoresReady]);
 
-  const scoringResult = useMemo(() => computeScores(ctx), [ctx]);
+  const scoringResult = useMemo(
+    () =>
+      computeScores({
+        resumeUploaded: profile.resumeUploaded,
+        previousScore: profile.resumePreviousScore,
+        fileName: profile.resumeFileName ?? undefined,
+      }),
+    [profile.resumeUploaded, profile.resumePreviousScore, profile.resumeFileName],
+  );
 
   if (loading) {
     return (
@@ -71,8 +72,8 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
     );
   }
 
-  const showLocked = !bothConnected;
-  const showAnalyzing = bothConnected && analyzing && !scoresReady;
+  const showLocked = !isUnlocked;
+  const showAnalyzing = isUnlocked && analyzing && !scoresReady;
 
   return (
     <div className="space-y-6 animate-fade-slide">
@@ -99,11 +100,9 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
           <>
             {showLocked && (
               <LockedState
-                resumeUploaded={ctx.resumeUploaded}
-                githubConnected={ctx.githubConnected}
-
+                resumeUploaded={false}
                 title="Your skill score is locked"
-                message="Upload your resume and connect GitHub to unlock your verified skill score. We cross-reference both sources against external benchmarks for accurate scoring."
+                message="Upload your resume to unlock your verified skill score, job matches, and learning roadmap."
               />
             )}
 
@@ -194,15 +193,10 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
                   </div>
                 </Card>
 
-                {/* Skill bars with benchmark grounding */}
+                {/* Skill cards with resume evidence grounding */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {scoringResult.skills.map((skill, i) => (
-                    <SkillCard
-                      key={skill.name}
-                      skill={skill}
-                      benchmark={scoringResult.benchmarks[i]}
-                      index={i}
-                    />
+                    <SkillCard key={skill.name} skill={skill} index={i} />
                   ))}
                 </div>
               </>
@@ -210,24 +204,14 @@ export function SkillProfilePage({ onNavigate }: SkillProfilePageProps) {
           </>
         )}
 
-        {tab === 'github' && <GitHubInsights />}
-
         {tab === 'resume' && <ResumeAnalysis />}
       </div>
     </div>
   );
 }
 
-function SkillCard({
-  skill,
-  benchmark,
-  index,
-}: {
-  skill: ScoredSkill;
-  benchmark: SkillBenchmark | undefined;
-  index: number;
-}) {
-  const [showBenchmark, setShowBenchmark] = useState(false);
+function SkillCard({ skill, index }: { skill: ScoredSkill; index: number }) {
+  const isListedOnly = skill.supportLevel === 'listed-only';
 
   return (
     <Card className="p-6">
@@ -235,13 +219,21 @@ function SkillCard({
         <div>
           <h4 className="text-base font-semibold text-zinc-200">{skill.name}</h4>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="neutral" size="sm">{skill.level}</Badge>
+            <Badge variant="neutral" size="sm">
+              {skill.level}
+            </Badge>
             {skill.confidence >= 85 ? (
-              <Badge variant="success" size="sm">High confidence</Badge>
-            ) : skill.confidence >= 70 ? (
-              <Badge variant="warning" size="sm">Medium confidence</Badge>
+              <Badge variant="success" size="sm">
+                High confidence
+              </Badge>
+            ) : skill.confidence >= 65 ? (
+              <Badge variant="warning" size="sm">
+                Medium confidence
+              </Badge>
             ) : (
-              <Badge variant="error" size="sm">Low confidence</Badge>
+              <Badge variant="error" size="sm">
+                Low confidence
+              </Badge>
             )}
           </div>
         </div>
@@ -253,56 +245,41 @@ function SkillCard({
 
       <div className="h-2.5 rounded-full bg-zinc-800 overflow-hidden mb-4">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-400 bar-fill"
-          style={{ width: '0%' }}
-          ref={(el) => {
-            if (el) setTimeout(() => { el.style.width = `${skill.confidence}%`; }, 100);
-          }}
+          className={`h-full rounded-full bar-fill ${
+            skill.confidence >= 85
+              ? 'bg-gradient-to-r from-blue-500 to-teal-400'
+              : skill.confidence >= 65
+              ? 'bg-gradient-to-r from-blue-500 to-amber-400'
+              : 'bg-gradient-to-r from-amber-500 to-red-500'
+          }`}
+          style={{ width: `${skill.confidence}%` }}
         />
       </div>
 
-      <p className="text-xs text-zinc-500 leading-relaxed mb-3">{skill.evidence}</p>
+      <div className="mb-3">
+        <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
+          {isListedOnly ? (
+            <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+          )}
+          <span className={isListedOnly ? 'text-amber-400' : 'text-zinc-300'}>
+            {skill.supportLabel}
+          </span>
+        </div>
+        <p className="text-xs text-zinc-500 leading-relaxed">{skill.evidence}</p>
+      </div>
 
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/50">
         {skill.sources.map((source) => (
           <span
             key={source}
-            className="text-xs px-2 py-1 rounded-md bg-zinc-800/50 text-zinc-400 border border-zinc-700/30"
+            className="text-xs px-2 py-0.5 rounded-md bg-zinc-800/60 text-zinc-400 border border-zinc-700/40"
           >
             {source}
           </span>
         ))}
       </div>
-
-      {benchmark && (
-        <button
-          onClick={() => setShowBenchmark(!showBenchmark)}
-          className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          {showBenchmark ? 'Hide' : 'Show'} benchmark grounding
-        </button>
-      )}
-
-      {showBenchmark && benchmark && (
-        <div className="mt-3 p-3 rounded-lg bg-zinc-950/50 border border-zinc-800/50 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Your repos with this skill</span>
-            <span className="text-zinc-300 font-medium tabular-nums">{benchmark.userRepoCount}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Typical intermediate level</span>
-            <span className="text-zinc-400 tabular-nums">{benchmark.typicalIntermediateRepos}+ repos</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Typical advanced level</span>
-            <span className="text-zinc-400 tabular-nums">{benchmark.typicalAdvancedRepos}+ repos</span>
-          </div>
-          <p className="text-xs text-zinc-500 leading-relaxed pt-2 border-t border-zinc-800/50">
-            {benchmark.marketContext}
-          </p>
-        </div>
-      )}
     </Card>
   );
 }

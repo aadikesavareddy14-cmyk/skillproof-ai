@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Briefcase, MapPin, Clock, ExternalLink, Globe } from 'lucide-react';
 import { Card } from '@/components/dashboard/Card';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
@@ -20,7 +20,7 @@ type SortBy = 'best' | 'recent';
 const sourceColors: Record<JobListing['source'], string> = {
   'RemoteOK': 'bg-teal-500/10 text-teal-400 border-teal-500/20',
   'Adzuna': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  'GitHub Jobs': 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  'Dice': 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   'Himalayas': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   'Wellfound': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
 };
@@ -120,8 +120,6 @@ export function JobMatchesPage({ onNavigate }: JobMatchesPageProps) {
   const [locationFilter, setLocationFilter] = useState<LocationFilter>('all');
   const [sortBy, setSortBy] = useState<SortBy>('best');
 
-  const bothConnected = profile.resumeUploaded && profile.githubConnected;
-
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(timer);
@@ -137,14 +135,12 @@ export function JobMatchesPage({ onNavigate }: JobMatchesPageProps) {
     );
   }
 
-  if (!bothConnected) {
+  if (!profile.resumeUploaded) {
     return (
       <LockedState
-        resumeUploaded={profile.resumeUploaded}
-        githubConnected={profile.githubConnected}
-
+        resumeUploaded={false}
         title="Job matches are locked"
-        message="Upload your resume and connect GitHub so we can match you to jobs using your verified skill scores — not just keywords."
+        message="Upload your resume so we can match you to jobs using your verified skill scores — not just keywords."
       />
     );
   }
@@ -205,7 +201,7 @@ export function JobMatchesPage({ onNavigate }: JobMatchesPageProps) {
           <EmptyState
             icon={Briefcase}
             title="No jobs match your filters"
-            message="Try adjusting your filters or connect more skill sources to improve your matches."
+            message="Try adjusting your filters or upload an updated resume to improve your matches."
             actionLabel="Reset filters"
             onAction={() => { setMatchFilter('all'); setLocationFilter('all'); }}
           />

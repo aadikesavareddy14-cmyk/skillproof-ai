@@ -16,8 +16,6 @@ export function RoadmapPage({ onNavigate }: RoadmapPageProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  const bothConnected = profile.resumeUploaded && profile.githubConnected;
-
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(timer);
@@ -33,14 +31,12 @@ export function RoadmapPage({ onNavigate }: RoadmapPageProps) {
     );
   }
 
-  if (!bothConnected) {
+  if (!profile.resumeUploaded) {
     return (
       <LockedState
-        resumeUploaded={profile.resumeUploaded}
-        githubConnected={profile.githubConnected}
-
+        resumeUploaded={false}
         title="Your learning roadmap is locked"
-        message="Upload your resume and connect GitHub so we can generate a personalized roadmap based on your verified skill gaps."
+        message="Upload your resume so we can generate a personalized roadmap based on your verified skill gaps."
       />
     );
   }
@@ -65,10 +61,7 @@ export function RoadmapPage({ onNavigate }: RoadmapPageProps) {
         <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-blue-500 to-teal-500 bar-fill"
-            style={{ width: '0%' }}
-            ref={(el) => {
-              if (el) setTimeout(() => { el.style.width = `${progress}%`; }, 100);
-            }}
+            style={{ width: `${progress}%` }}
           />
         </div>
       </Card>

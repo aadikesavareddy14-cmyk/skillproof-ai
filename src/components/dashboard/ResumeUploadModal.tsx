@@ -119,7 +119,7 @@ export function ResumeUploadModal({ open, onClose, onConfirm }: ResumeUploadModa
             <h2 className="text-xl font-bold text-zinc-100">Upload your resume</h2>
           </div>
           <p className="text-sm text-zinc-400 mb-6">
-            PDF or Word document, up to 5MB. We'll analyze it alongside your GitHub activity.
+            PDF or Word document, up to 5MB. We'll analyze your skills, achievements, and project evidence.
           </p>
 
           {error && (

@@ -20,7 +20,7 @@ export interface JobMatch {
 
 export interface EvidenceSource {
   source: string;
-  type: 'GitHub' | 'Resume' | 'Project' | 'Assessment';
+  type: 'Resume' | 'Project' | 'Assessment';
   items: number;
   verified: boolean;
   icon: string;
@@ -46,11 +46,11 @@ export const summaryStats = {
 export const overallConfidence = 84;
 
 export const topSkills: SkillItem[] = [
-  { name: 'Python', confidence: 87, level: 'Advanced', sources: ['GitHub', 'Assessment'] },
-  { name: 'React', confidence: 92, level: 'Expert', sources: ['GitHub', 'Project', 'Assessment'] },
-  { name: 'TypeScript', confidence: 85, level: 'Advanced', sources: ['GitHub', 'Project'] },
-  { name: 'System Design', confidence: 71, level: 'Intermediate', sources: ['Assessment'] },
-  { name: 'Node.js', confidence: 79, level: 'Advanced', sources: ['GitHub', 'Project'] },
+  { name: 'Python', confidence: 87, level: 'Advanced', sources: ['Resume', 'Assessment'] },
+  { name: 'React', confidence: 92, level: 'Expert', sources: ['Resume', 'Project', 'Assessment'] },
+  { name: 'TypeScript', confidence: 85, level: 'Advanced', sources: ['Resume', 'Project'] },
+  { name: 'System Design', confidence: 71, level: 'Intermediate', sources: ['Assessment', 'Resume'] },
+  { name: 'Node.js', confidence: 79, level: 'Advanced', sources: ['Resume', 'Project'] },
   { name: 'SQL', confidence: 68, level: 'Intermediate', sources: ['Assessment', 'Resume'] },
 ];
 
@@ -144,19 +144,18 @@ export const jobMatches: JobMatch[] = [
 ];
 
 export const evidenceSources: EvidenceSource[] = [
-  { source: 'GitHub', type: 'GitHub', items: 12, verified: true, icon: 'github' },
-  { source: 'Resume', type: 'Resume', items: 1, verified: true, icon: 'file' },
-  { source: 'Projects', type: 'Project', items: 5, verified: true, icon: 'folder' },
+  { source: 'Resume Analysis', type: 'Resume', items: 8, verified: true, icon: 'file' },
+  { source: 'Project Portfolio', type: 'Project', items: 5, verified: true, icon: 'folder' },
   { source: 'Adaptive Assessments', type: 'Assessment', items: 8, verified: true, icon: 'brain' },
 ];
 
 export const verificationBreakdown = [
-  { skill: 'Python', github: 12, projects: 3, assessment: 87, resume: true, confidence: 87 },
-  { skill: 'React', github: 8, projects: 5, assessment: 92, resume: true, confidence: 92 },
-  { skill: 'TypeScript', github: 10, projects: 4, assessment: null, resume: true, confidence: 85 },
-  { skill: 'System Design', github: 0, projects: 1, assessment: 71, resume: true, confidence: 71 },
-  { skill: 'Node.js', github: 6, projects: 3, assessment: null, resume: true, confidence: 79 },
-  { skill: 'SQL', github: 2, projects: 0, assessment: 68, resume: true, confidence: 68 },
+  { skill: 'Python', resumeMentions: 5, projects: 3, assessment: 87, resume: true, confidence: 87 },
+  { skill: 'React', resumeMentions: 6, projects: 5, assessment: 92, resume: true, confidence: 92 },
+  { skill: 'TypeScript', resumeMentions: 4, projects: 4, assessment: null, resume: true, confidence: 85 },
+  { skill: 'System Design', resumeMentions: 2, projects: 1, assessment: 71, resume: true, confidence: 71 },
+  { skill: 'Node.js', resumeMentions: 3, projects: 3, assessment: null, resume: true, confidence: 79 },
+  { skill: 'SQL', resumeMentions: 2, projects: 0, assessment: 68, resume: true, confidence: 68 },
 ];
 
 export const roadmapSteps: RoadmapStep[] = [
@@ -210,7 +209,7 @@ export const roadmapSteps: RoadmapStep[] = [
 export const recentActivity = [
   { action: 'New job match: Senior Full-Stack Engineer at Vercel', time: '2h ago', type: 'match' },
   { action: 'Assessment completed: System Design (71%)', time: '1d ago', type: 'assessment' },
-  { action: 'GitHub synced: 3 new repositories analyzed', time: '2d ago', type: 'sync' },
+  { action: 'Resume analyzed: 8 skills verified with supporting evidence', time: '2d ago', type: 'sync' },
   { action: 'Skill profile updated: React confidence increased to 92%', time: '3d ago', type: 'update' },
   { action: 'Roadmap generated: 5 learning steps created', time: '5d ago', type: 'roadmap' },
 ];
