@@ -43,7 +43,7 @@ export function SkillProofLogo({
       } ${sizeClass} ${className}`}
       style={{
         ...(isCustomSize ? { height: `${size}px`, width: 'auto' } : {}),
-        aspectRatio: '1024 / 827',
+        aspectRatio: '860 / 696',
         ...style,
       }}
       {...props}
